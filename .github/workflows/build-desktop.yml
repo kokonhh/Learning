@@ -1,0 +1,64 @@
+name: Build Windows app
+
+on:
+  push:
+    branches: [main, claude/outreach-sales-system-xhpeal]
+    paths: ["outreach/**", "desktop.py", "requirements.txt", ".github/workflows/build-desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Build Outreach.exe
+        run: >
+          pyinstaller --noconfirm --onefile --name Outreach
+          --add-data "outreach/templates;outreach/templates"
+          --add-data "outreach/static;outreach/static"
+          --add-data "outreach/schema.sql;outreach"
+          --collect-data tzdata
+          desktop.py
+
+      - name: Smoke test the exe
+        shell: pwsh
+        run: |
+          $env:OUTREACH_NO_BROWSER = "1"
+          $env:APPDATA = "$env:RUNNER_TEMP\appdata"
+          $p = Start-Process -FilePath dist\Outreach.exe -PassThru
+          Start-Sleep -Seconds 15
+          foreach ($u in "/", "/contacts", "/sequences/1", "/tasks", "/pipeline", "/static/style.css") {
+            $r = Invoke-WebRequest -UseBasicParsing "http://127.0.0.1:5000$u"
+            if ($r.StatusCode -ne 200) { throw "$u returned $($r.StatusCode)" }
+            Write-Host "OK $u"
+          }
+          Stop-Process -Id $p.Id
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Outreach-Windows
+          path: dist/Outreach.exe
+
+      - name: Publish download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: outreach-desktop-${{ github.run_number }}
+          name: Outreach for Windows (build ${{ github.run_number }})
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: dist/Outreach.exe
+          body: |
+            Download **Outreach.exe** below and double-click it. No Python needed.
+            Windows may say "Windows protected your PC": click **More info → Run anyway** (the app isn't code-signed).
+            Keep the black window open while you use the app; your data is saved in `%APPDATA%\Outreach`.

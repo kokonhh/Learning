@@ -31,6 +31,11 @@ SaaS fees and no per-seat pricing.
 
 ## Quick start
 
+**No install (Windows):** download **Outreach.exe** from this repo's
+[Releases page](../../releases/latest) and double-click it. Python is bundled inside. Windows may warn
+"Windows protected your PC": click *More info → Run anyway*. Your data is kept in `%APPDATA%\Outreach`.
+To send real email, put a `.env` file (see `.env.example`) in that folder.
+
 **Easiest:** download the code, then double-click **`Start Outreach (Windows).bat`** (Windows) or
 **`start-mac.command`** (Mac). The first run installs everything. After that, your browser opens at
 http://localhost:5000. Keep the black window open while you use the app. Python must be installed

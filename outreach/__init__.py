@@ -27,7 +27,9 @@ def _load_secret(directory: str) -> str:
 
 
 def create_app(test_config: dict | None = None) -> Flask:
-    app = Flask(__name__, instance_relative_config=True)
+    # OUTREACH_INSTANCE lets the desktop build keep data in a stable folder (e.g. %APPDATA%\Outreach)
+    app = Flask(__name__, instance_relative_config=True,
+                instance_path=os.environ.get("OUTREACH_INSTANCE") or None)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     app.config.update(
         DATABASE=os.environ.get("OUTREACH_DB", os.path.join(app.instance_path, "outreach.db")),
