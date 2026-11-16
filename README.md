@@ -31,6 +31,13 @@ SaaS fees and no per-seat pricing.
 
 ## Quick start
 
+**Easiest:** download the code, then double-click **`Start Outreach (Windows).bat`** (Windows) or
+**`start-mac.command`** (Mac). The first run installs everything. After that, your browser opens at
+http://localhost:5000. Keep the black window open while you use the app. Python must be installed
+(python.org; on Windows tick "Add python.exe to PATH").
+
+**Manual:**
+
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements-dev.txt
