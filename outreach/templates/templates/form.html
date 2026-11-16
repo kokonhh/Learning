@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit template' if tid else 'New template' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit template' if tid else 'New template' }}</h1></div>
+<div class="grid g2">
+  <form method="post" class="card" data-preview="#tpl-preview">
+    {{ csrf_field() }}
+    <div class="grid g2">
+      <div><label>Name</label><input type="text" name="name" required value="{{ tpl.get('name') or '' }}"></div>
+      <div><label>Category</label><input type="text" name="category" value="{{ tpl.get('category') or '' }}" placeholder="Cold outbound"></div>
+    </div>
+    <label>Subject</label><input type="text" name="subject" id="f-subject" required value="{{ tpl.get('subject') or '' }}">
+    <label>Body (plain text — links become clickable; your signature and unsubscribe footer are added automatically)</label>
+    <textarea name="body" id="f-body" required style="min-height:260px">{{ tpl.get('body') or '' }}</textarea>
+    <div class="fields small" data-target="#f-body">Insert:
+      {% for f in fields %}<code>{{ f }}</code>{% endfor %}</div>
+    <div class="row" style="margin-top:12px">
+      {% if tid %}<button name="delete" value="1" class="danger" formnovalidate data-confirm="Delete this template?">Delete</button>{% endif %}
+      <span class="spacer"></span>
+      <a class="btn" href="{{ url_for('main.templates') }}">Back</a><button class="primary">Save</button>
+    </div>
+  </form>
+  <div>
+    <div class="card"><h2>Live preview</h2><div id="tpl-preview" class="preview"></div></div>
+    <div class="card small">
+      <h3>Syntax</h3>
+      <p><code>{{ '{{first_name}}' }}</code> — merge field. If it's empty for a contact, that contact's sequence <b>pauses</b> instead of sending "Hi ,".</p>
+      <p><code>{{ '{{first_name|there}}' }}</code> — merge field with a fallback.</p>
+      <p><code>{{ '{{pain_point}}' }}</code> — any custom column from your CSV import.</p>
+      <p><code>[[Hi|Hey|Hello]]</code> — spintax: one option is picked per contact, so emails aren't identical.</p>
+      <h3 style="margin-top:12px">Deliverability tips</h3>
+      <ul class="muted">
+        <li>Keep first-touch emails under ~120 words, plain text, at most one link.</li>
+        <li>Personalise the first line; ask one low-friction question.</li>
+        <li>Send follow-ups as replies in the same thread (step setting).</li>
+        <li>Warm new mailboxes and keep daily volume modest (Settings → daily limit).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

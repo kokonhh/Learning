@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Today's tasks{% endblock %}
+{% macro task_row(t, overdue=False) %}
+<div class="card" style="padding:12px">
+  <div class="row" style="align-items:flex-start">
+    <div style="flex:1;min-width:240px">
+      <div><span class="badge {{ 'warn' if overdue }}">{{ t.task_type }}</span> <b>{{ t.title }}</b>
+        {% if t.seq_name %}<span class="muted small">· {{ t.seq_name }}</span>{% endif %}</div>
+      {% if t.contact_id %}
+      <div class="small" style="margin-top:4px">
+        <a href="{{ url_for('main.contact_detail', cid=t.contact_id) }}">{{ t.first_name or '' }} {{ t.last_name or '' }}</a>
+        {% if t.contact_title %}<span class="muted">· {{ t.contact_title }}</span>{% endif %}{% if t.company_name %} <span class="muted">at {{ t.company_name }}</span>{% endif %}
+        {% if t.phone %} · <a href="tel:{{ t.phone }}">📞 {{ t.phone }}</a>{% endif %}
+        {% if t.linkedin_url %} · <a href="{{ t.linkedin_url }}" target="_blank" rel="noopener">💼 LinkedIn</a>{% endif %}
+        · <a href="mailto:{{ t.email }}">{{ t.email }}</a>
+      </div>{% endif %}
+      {% if t.notes %}<div class="muted small" style="margin-top:4px">{{ t.notes }}</div>{% endif %}
+      <div class="muted small">Due {{ t.due_at|ago }}</div>
+    </div>
+    <form method="post" action="{{ url_for('main.task_action', task_id=t.id) }}" class="row">{{ csrf_field() }}
+      <select name="outcome" style="width:auto">
+        <option value="">Outcome…</option>
+        {% if t.task_type == 'call' %}<option>connected</option><option>left voicemail</option><option>no answer</option><option>wrong number</option>{% endif %}
+        {% if t.task_type == 'linkedin' %}<option>connection sent</option><option>message sent</option>{% endif %}
+        <option>interested</option><option>meeting booked</option><option>not interested</option>
+      </select>
+      <button name="action" value="done" class="primary sm">Done</button>
+      <button name="action" value="skipped" class="sm">Skip</button>
+      <input type="hidden" name="days" value="1"><button name="action" value="snooze" class="sm" title="Snooze 1 day">⏰</button>
+    </form>
+  </div>
+</div>
+{% endmacro %}
+{% block content %}
+<div class="page-head"><div><h1>Today's tasks</h1><div class="muted">Calls, LinkedIn touches and follow-ups from your sequences. Completing a sequence task moves that contact to the next step.</div></div>
+  <div class="row">
+    {% for k, label in [('', 'All'), ('call', 'Calls'), ('linkedin', 'LinkedIn'), ('follow_up', 'Follow-ups'), ('todo', 'To-dos')] %}
+    <a class="btn sm {{ 'primary' if type == k }}" href="{{ url_for('main.tasks', type=k) if k else url_for('main.tasks') }}">{{ label }}</a>{% endfor %}
+  </div></div>
+
+<h2>Due now ({{ due|length }})</h2>
+{% for t in due %}{{ task_row(t, t.due_at < now[:10]) }}{% else %}<div class="card empty">🎉 Nothing due. Nice work.</div>{% endfor %}
+
+{% if upcoming %}<h2 style="margin-top:24px">Upcoming</h2>
+{% for t in upcoming %}{{ task_row(t) }}{% endfor %}{% endif %}
+
+{% if done %}<h2 style="margin-top:24px">Completed in the last 24h ({{ done|length }})</h2>
+<div class="card"><table>
+  {% for t in done %}<tr><td><span class="badge {{ t.status }}">{{ t.status }}</span></td><td>{{ t.title }}</td>
+    <td class="muted">{{ t.outcome or '' }}</td><td class="muted">{{ t.completed_at|ago }}</td></tr>{% endfor %}
+</table></div>{% endif %}
+{% endblock %}

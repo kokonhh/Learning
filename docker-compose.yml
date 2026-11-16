@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    env_file: .env
+    ports: ["8000:8000"]
+    volumes: ["outreach-data:/data"]
+    restart: unless-stopped
+  worker:
+    build: .
+    env_file: .env
+    command: ["flask", "--app", "outreach", "worker", "--interval", "60"]
+    volumes: ["outreach-data:/data"]
+    restart: unless-stopped
+volumes:
+  outreach-data:

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Contacts{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Contacts</h1><div class="muted">{{ total }} matching</div></div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('main.contacts_export', **args) }}">Export CSV</a>
+    <a class="btn" href="{{ url_for('main.contacts_import') }}">Import CSV</a>
+    <a class="btn primary" href="{{ url_for('main.contact_new') }}">+ New contact</a>
+  </div>
+</div>
+
+<form class="card row" method="get">
+  <input type="search" name="q" value="{{ args.get('q', '') }}" placeholder="Search name, email, company, title" style="min-width:260px">
+  <select name="status"><option value="">Any status</option>
+    {% for s in statuses %}<option {{ 'selected' if args.get('status') == s }}>{{ s }}</option>{% endfor %}</select>
+  <select name="tag"><option value="">Any tag</option>
+    {% for t in tags %}<option {{ 'selected' if args.get('tag') == t }}>{{ t }}</option>{% endfor %}</select>
+  <select name="sort">
+    {% for k, label in [('score','Top score'),('recent','Newest'),('name','Name'),('last_contacted','Last contacted')] %}
+    <option value="{{ k }}" {{ 'selected' if args.get('sort', 'score') == k }}>{{ label }}</option>{% endfor %}</select>
+  <button>Filter</button>
+  {% if args %}<a href="{{ url_for('main.contacts') }}">Clear</a>{% endif %}
+</form>
+
+<form method="post" action="{{ url_for('main.contacts_bulk') }}" class="card">
+  {{ csrf_field() }}
+  <div class="row" style="margin-bottom:10px">
+    <select name="action" required>
+      <option value="">Bulk action…</option>
+      <option value="enroll">Enroll in sequence</option>
+      <option value="tag">Add tag</option>
+      <option value="status">Set status</option>
+      <option value="delete">Delete</option>
+    </select>
+    <select name="sequence_id"><option value="">— sequence —</option>
+      {% for s in sequences %}<option value="{{ s.id }}">{{ s.name }}{% if s.status != 'active' %} ({{ s.status }}){% endif %}</option>{% endfor %}</select>
+    <input type="text" name="tag" placeholder="tag" style="width:120px">
+    <select name="status"><option value="">— status —</option>
+      {% for s in statuses %}<option>{{ s }}</option>{% endfor %}</select>
+    <button class="primary">Apply to selected</button>
+  </div>
+  <div class="table-wrap">
+  <table>
+    <tr><th><input type="checkbox" data-select-all=".pick"></th><th>Score</th><th>Name</th><th>Company</th>
+      <th>Status</th><th>Tags</th><th>Last contacted</th></tr>
+    {% for c in contacts %}
+    <tr>
+      <td><input type="checkbox" class="pick" name="ids" value="{{ c.id }}"></td>
+      <td><span class="score {{ 'hot' if c.score >= 60 else 'warm' if c.score >= 35 }}">{{ c.score }}</span></td>
+      <td><a href="{{ url_for('main.contact_detail', cid=c.id) }}">{{ c.first_name or '' }} {{ c.last_name or '' }}{% if not c.first_name and not c.last_name %}{{ c.email }}{% endif %}</a>
+        <div class="muted small">{{ c.title or '' }} · {{ c.email }}</div></td>
+      <td>{% if c.company_id %}<a href="{{ url_for('main.company_detail', coid=c.company_id) }}">{{ c.company_name }}</a>{% endif %}</td>
+      <td><span class="badge {{ c.status }}">{{ c.status }}</span></td>
+      <td>{% for t in c.tags|tags %}<span class="tag">{{ t }}</span>{% endfor %}</td>
+      <td class="muted">{{ c.last_contacted_at|ago if c.last_contacted_at else '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7" class="empty">No contacts yet. <a href="{{ url_for('main.contacts_import') }}">Import a CSV</a> to get started.</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% if total > per %}
+  <div class="pager">
+    {% set a = args.to_dict() %}
+    {% if page > 1 %}{% set _ = a.update({'page': page - 1}) %}<a class="btn sm" href="{{ url_for('main.contacts', **a) }}">← Prev</a>{% endif %}
+    <span class="muted">Page {{ page }} of {{ ((total - 1) // per) + 1 }}</span>
+    {% if page * per < total %}{% set _ = a.update({'page': page + 1}) %}<a class="btn sm" href="{{ url_for('main.contacts', **a) }}">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+</form>
+{% endblock %}

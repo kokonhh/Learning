@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · Outreach</title><link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"></head>
+<body>
+<form method="post" class="card" style="max-width:340px;margin:12vh auto">
+  {{ csrf_field() }}
+  <div class="brand" style="padding:0 0 10px">Out<span>reach</span></div>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for cat, msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}{% endwith %}
+  <label>Password</label><input type="password" name="password" autofocus required>
+  <div class="row end" style="margin-top:12px"><button class="primary">Sign in</button></div>
+</form>
+</body></html>

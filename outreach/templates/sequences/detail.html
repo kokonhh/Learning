@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ seq.name }}{% endblock %}
+{% macro step_fields(step, templates, step_types) %}
+  <div class="grid g3">
+    <div><label>Type</label><select name="step_type">
+      {% for k, v in step_types.items() %}<option value="{{ k }}" {{ 'selected' if step.get('step_type', 'email') == k }}>{{ v }}</option>{% endfor %}</select></div>
+    <div><label>Wait (days after previous step)</label><input type="number" min="0" name="delay_days" value="{{ step.get('delay_days', 2) }}"></div>
+    <div class="email-only"><label>Template</label><select name="template_id"><option value="">— write below —</option>
+      {% for t in templates %}<option value="{{ t.id }}" {{ 'selected' if step.get('template_id') == t.id }}>{{ t.name }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="email-only">
+    <label class="check" style="margin-top:10px"><input type="checkbox" name="thread_reply" value="1" {{ 'checked' if step.get('thread_reply', 1) }}>
+      Send as a reply in the same thread (uses "Re: first subject")</label>
+    <label>Subject (overrides template)</label><input type="text" name="subject" value="{{ step.get('subject') or '' }}">
+    <label>Body (overrides template)</label><textarea name="body">{{ step.get('body') or '' }}</textarea>
+  </div>
+  <div class="manual-only"><label>Instructions for the rep</label>
+    <textarea name="instructions" style="min-height:70px;font-family:inherit">{{ step.get('instructions') or '' }}</textarea></div>
+{% endmacro %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{{ seq.name }} <span class="badge {{ seq.status }}">{{ seq.status }}</span></h1>
+    <div class="muted">{{ seq.description or '' }}</div></div>
+  <form method="post" action="{{ url_for('main.sequence_settings', sid=seq.id) }}" class="row">{{ csrf_field() }}
+    {% if seq.status != 'active' %}<button name="action" value="activate" class="primary">Activate</button>
+    {% else %}<button name="action" value="pause">Pause</button>{% endif %}
+    <button name="action" value="clone">Clone</button>
+    {% if seq.status != 'archived' %}<button name="action" value="archive" class="danger" data-confirm="Archive this sequence? Active enrollments stop sending.">Archive</button>{% endif %}
+  </form>
+</div>
+
+{% if seq.status != 'active' %}
+<div class="banner">This sequence is <b>{{ seq.status }}</b> — nothing will send until you activate it. You can enroll contacts now; they'll start when it's active.</div>
+{% endif %}
+
+<div class="grid g4">
+  <div class="card stat"><div class="label">Enrolled</div><div class="value">{{ report.total }}</div>
+    <div class="sub">{{ report.enrollments.get('active', 0) }} active · {{ report.enrollments.get('completed', 0) }} finished</div></div>
+  <div class="card stat"><div class="label">Emails sent</div><div class="value">{{ report.email.sent }}</div></div>
+  <div class="card stat"><div class="label">Open rate</div><div class="value">{{ report.email.open_rate }}%</div></div>
+  <div class="card stat"><div class="label">Reply rate</div><div class="value">{{ report.email.reply_rate }}%</div>
+    <div class="sub">{{ report.enrollments.get('replied', 0) }} replied · {{ report.enrollments.get('unsubscribed', 0) + report.enrollments.get('bounced', 0) }} unsub/bounce</div></div>
+</div>
+
+<div class="grid side">
+  <div>
+    <div class="card">
+      <h2>Steps</h2>
+      <ol class="steps">
+        {% for s in report.steps %}{% set st = s.step %}
+        <li class="step">
+          <div class="day">Day<b>{{ s.day }}</b></div>
+          <div>
+            <div><span class="icon">{{ {'email': '✉️', 'call': '📞', 'linkedin': '💼', 'task': '✅'}[st.step_type] }}</span>
+              <b>{{ step_types[st.step_type] }}</b>
+              {% if st.step_type == 'email' %}
+                {% set tpl = templates|selectattr('id', 'equalto', st.template_id)|first %}
+                — {{ st.subject or (('Re: (same thread)') if st.thread_reply and not loop.first else (tpl.subject if tpl else '')) }}
+                {% if tpl %}<span class="muted small">· template “{{ tpl.name }}”</span>{% endif %}
+              {% else %}<span class="muted">— {{ st.instructions or 'no instructions' }}</span>{% endif %}
+            </div>
+            <div class="muted small" style="margin-top:4px">
+              {% if st.step_type == 'email' %}{{ s.sent }} sent · {{ s.open_rate }}% opened · {{ s.reply_rate }}% replied
+              {% else %}{{ s.done }} done · {{ s.open }} waiting{% endif %}
+            </div>
+            <details style="margin-top:6px"><summary class="small">Edit step</summary>
+              <form method="post" action="{{ url_for('main.sequence_step', sid=seq.id, step_id=st.id) }}" data-step-form>
+                {{ csrf_field() }}{{ step_fields(st, templates, step_types) }}
+                <div class="row end" style="margin-top:8px"><button class="primary sm">Save step</button></div>
+              </form>
+            </details>
+          </div>
+          <form method="post" action="{{ url_for('main.sequence_step', sid=seq.id, step_id=st.id) }}" class="row" style="align-items:flex-start">
+            {{ csrf_field() }}
+            <button class="sm" name="action" value="up" {{ 'disabled' if loop.first }}>↑</button>
+            <button class="sm" name="action" value="down" {{ 'disabled' if loop.last }}>↓</button>
+            <button class="sm danger" name="action" value="delete" data-confirm="Delete this step?">✕</button>
+          </form>
+        </li>
+        {% else %}<li class="empty">No steps yet. Add the first one below.</li>{% endfor %}
+      </ol>
+      <details {{ 'open' if not report.steps }}>
+        <summary><b>+ Add step</b></summary>
+        <form method="post" action="{{ url_for('main.sequence_step', sid=seq.id) }}" data-step-form>
+          {{ csrf_field() }}{{ step_fields({'delay_days': 0 if not report.steps else 2, 'thread_reply': 1 if report.steps else 0}, templates, step_types) }}
+          <div class="row end" style="margin-top:8px"><button class="primary">Add step</button></div>
+        </form>
+      </details>
+    </div>
+
+    <div class="card table-wrap">
+      <div class="row"><h2 style="margin:0">People</h2><span class="spacer"></span>
+        {% for st in ['active', 'paused', 'replied', 'completed', 'stopped'] %}
+        <a class="btn sm {{ 'primary' if status_filter == st }}" href="{{ url_for('main.sequence_detail', sid=seq.id, status=st) }}">{{ st }} ({{ report.enrollments.get(st, 0) }})</a>{% endfor %}
+        {% if status_filter %}<a class="small" href="{{ url_for('main.sequence_detail', sid=seq.id) }}">all</a>{% endif %}
+      </div>
+      <table style="margin-top:8px">
+        <tr><th>Contact</th><th>Status</th><th>Step</th><th>Next</th><th></th></tr>
+        {% for e in enrollments %}
+        <tr><td><a href="{{ url_for('main.contact_detail', cid=e.contact_id) }}">{{ e.first_name or '' }} {{ e.last_name or '' }}</a>
+            <div class="muted small">{{ e.email }}</div></td>
+          <td><span class="badge {{ e.status }}">{{ e.status }}</span></td>
+          <td>{{ e.current_step }} / {{ report.steps|length }}</td>
+          <td class="muted">{{ next_run_label(e.next_run_at) if e.status == 'active' else '—' }}</td>
+          <td>
+            {% if e.status == 'paused' %}<form method="post" action="{{ url_for('main.enrollment_action', eid=e.id, action='resume') }}">{{ csrf_field() }}<button class="sm">Resume</button></form>
+            {% elif e.status == 'active' %}<form method="post" action="{{ url_for('main.enrollment_action', eid=e.id, action='pause') }}">{{ csrf_field() }}<button class="sm">Pause</button></form>{% endif %}
+          </td></tr>
+        {% else %}<tr><td colspan="5" class="empty">Nobody enrolled{{ ' with this status' if status_filter }}.</td></tr>{% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Enroll contacts</h2>
+      <form method="post" action="{{ url_for('main.sequence_settings', sid=seq.id) }}">{{ csrf_field() }}
+        <input type="hidden" name="action" value="enroll_tag">
+        <label>Everyone with tag</label>
+        <div class="row"><select name="tag" required style="flex:1">
+          {% for t in tags %}<option>{{ t }}</option>{% endfor %}</select><button>Enroll</button></div>
+      </form>
+      <p class="small muted">Or select people on the <a href="{{ url_for('main.contacts') }}">Contacts</a> page and use
+        <i>Bulk action → Enroll</i>, or pick a sequence while importing a CSV. Suppressed, unsubscribed and
+        already-enrolled contacts are skipped automatically.</p>
+    </div>
+    <form method="post" action="{{ url_for('main.sequence_settings', sid=seq.id) }}" class="card">{{ csrf_field() }}
+      <h2>Settings</h2>
+      <input type="hidden" name="action" value="save">
+      <label>Name</label><input type="text" name="name" value="{{ seq.name }}" required>
+      <label>Description</label><input type="text" name="description" value="{{ seq.description or '' }}">
+      <label class="check" style="margin-top:10px"><input type="checkbox" name="stop_on_reply" value="1" {{ 'checked' if seq.stop_on_reply }}> Stop for a contact when they reply or book a meeting</label>
+      <div class="row end" style="margin-top:10px"><button>Save</button></div>
+    </form>
+    <div class="card small muted">
+      <h3>How it runs</h3>
+      <ul>
+        <li>Email steps send automatically inside your send window, up to the daily limit (Settings).</li>
+        <li>Call / LinkedIn / task steps create a task in <a href="{{ url_for('main.tasks') }}">Today's tasks</a>; the sequence waits until you complete or skip it.</li>
+        <li>A contact whose merge fields are missing is paused, not sent a broken email.</li>
+        <li>Replies, unsubscribes and bounces stop the sequence for that contact.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

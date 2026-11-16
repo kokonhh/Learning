@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Pipeline{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Pipeline</h1>
+    <div class="muted">Open <b data-open>{{ summary.open_value|money }}</b> · weighted <b data-weighted>{{ summary.weighted|money }}</b>
+      · won {{ summary.won_value|money }} ({{ summary.won_count }}) · win rate {{ summary.win_rate }}%</div></div>
+  <a class="btn primary" href="{{ url_for('main.deal_edit') }}">+ New deal</a>
+</div>
+<p class="muted small">Drag cards between columns to change stage.</p>
+<div class="kanban">
+  {% for stage in stages %}{% set s = summary.stages|selectattr('stage', 'equalto', stage)|first %}
+  <div class="col" data-stage="{{ stage }}">
+    <div class="col-head"><span class="badge {{ stage }}">{{ stage }}</span>
+      <span class="muted small" data-total>{{ (s.value if s else 0)|money }} · {{ s.n if s else 0 }}</span></div>
+    <div class="cards">
+      {% for d in by_stage[stage] %}
+      <div class="deal" draggable="true" data-id="{{ d.id }}">
+        <a href="{{ url_for('main.deal_edit', did=d.id) }}"><b>{{ d.name }}</b></a>
+        <div class="row small"><span class="v">{{ d.value|money }}</span>
+          {% if d.probability is not none %}<span class="muted">{{ d.probability }}%</span>{% endif %}
+          <span class="spacer"></span>{% if d.close_date %}<span class="muted">{{ d.close_date }}</span>{% endif %}</div>
+        {% if d.contact_id %}<div class="muted small">{{ d.first_name or d.email }}{% if d.company_name %} · {{ d.company_name }}{% endif %}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

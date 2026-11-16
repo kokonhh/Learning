@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Suppression list{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Suppression list</h1><div class="muted">These addresses are never emailed — unsubscribes, bounces, complaints and manual blocks.</div></div></div>
+<div class="grid side">
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Email</th><th>Reason</th><th>Added</th><th></th></tr>
+      {% for r in rows %}
+      <tr><td>{{ r.email }}</td><td><span class="badge {{ 'bounced' if r.reason == 'bounced' else 'unsubscribed' }}">{{ r.reason }}</span></td>
+        <td class="muted">{{ r.created_at|ago }}</td>
+        <td><form method="post">{{ csrf_field() }}<button class="sm" name="remove" value="{{ r.email }}" data-confirm="Remove {{ r.email }} from the suppression list? Only do this if they asked to hear from you again.">Remove</button></form></td></tr>
+      {% else %}<tr><td colspan="4" class="empty">Empty.</td></tr>{% endfor %}
+    </table>
+  </div>
+  <form method="post" class="card">{{ csrf_field() }}
+    <h2>Add addresses</h2>
+    <textarea name="emails" placeholder="one per line or comma separated"></textarea>
+    <div class="row end" style="margin-top:8px"><button class="primary">Suppress</button></div>
+  </form>
+</div>
+{% endblock %}

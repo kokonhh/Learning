@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit contact' if cid else 'New contact' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit contact' if cid else 'New contact' }}</h1></div>
+<form method="post" class="card" style="max-width:820px">
+  {{ csrf_field() }}
+  <div class="grid g2">
+    <div><label>Email *</label><input type="email" name="email" required value="{{ contact.get('email') or '' }}"></div>
+    <div><label>Status</label><select name="status">
+      {% for s in statuses %}<option {{ 'selected' if (contact.get('status') or 'new') == s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div><label>First name</label><input type="text" name="first_name" value="{{ contact.get('first_name') or '' }}"></div>
+    <div><label>Last name</label><input type="text" name="last_name" value="{{ contact.get('last_name') or '' }}"></div>
+    <div><label>Title</label><input type="text" name="title" value="{{ contact.get('title') or '' }}"></div>
+    <div><label>Phone</label><input type="text" name="phone" value="{{ contact.get('phone') or '' }}"></div>
+    <div><label>LinkedIn URL</label><input type="url" name="linkedin_url" value="{{ contact.get('linkedin_url') or '' }}"></div>
+    <div><label>Owner</label><input type="text" name="owner" value="{{ contact.get('owner') or '' }}"></div>
+    <div><label>Company</label><input type="text" name="company" value="{{ contact.get('company') or '' }}"></div>
+    <div><label>Company domain</label><input type="text" name="domain" value="{{ contact.get('domain') or '' }}"></div>
+    <div><label>Industry</label><input type="text" name="industry" value="{{ contact.get('industry') or '' }}"></div>
+    <div><label>Company size</label><select name="size">
+      {% for s in ['', '1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'] %}
+      <option {{ 'selected' if (contact.get('size') or '') == s }}>{{ s }}</option>{% endfor %}</select></div>
+    <div><label>Tags (comma separated)</label><input type="text" name="tags" value="{{ contact.get('tags') or '' }}"></div>
+    <div><label>Timezone</label><input type="text" name="timezone" placeholder="e.g. America/New_York" value="{{ contact.get('timezone') or '' }}"></div>
+  </div>
+  <label>Custom fields — one per line as <code>key: value</code> (usable in templates as <code>{{ '{{key}}' }}</code>)</label>
+  <textarea name="custom_fields" style="min-height:80px">{{ contact.get('custom_fields') or '' }}</textarea>
+  <div class="row end" style="margin-top:14px">
+    <a class="btn" href="{{ url_for('main.contact_detail', cid=cid) if cid else url_for('main.contacts') }}">Cancel</a>
+    <button class="primary">Save</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ co.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{{ co.name }}</h1><div class="muted">{{ co.industry or '' }} {% if co.size %}· {{ co.size }} employees{% endif %}</div></div>
+  <a class="btn" href="{{ url_for('main.contacts', company_id=co.id) }}">Filter contacts</a></div>
+<div class="grid side">
+  <div>
+    <div class="card table-wrap">
+      <h2>People</h2>
+      <table>
+        {% for c in contacts %}
+        <tr><td><span class="score {{ 'hot' if c.score >= 60 else 'warm' if c.score >= 35 }}">{{ c.score }}</span></td>
+          <td><a href="{{ url_for('main.contact_detail', cid=c.id) }}">{{ c.first_name or '' }} {{ c.last_name or c.email }}</a>
+            <div class="muted small">{{ c.title or '' }}</div></td>
+          <td><span class="badge {{ c.status }}">{{ c.status }}</span></td></tr>
+        {% else %}<tr><td class="empty">No contacts.</td></tr>{% endfor %}
+      </table>
+    </div>
+    <div class="card">
+      <h2>Deals</h2>
+      {% for d in deals %}<div><a href="{{ url_for('main.deal_edit', did=d.id) }}">{{ d.name }}</a> · {{ d.value|money }}
+        <span class="badge {{ d.stage }}">{{ d.stage }}</span></div>
+      {% else %}<div class="muted">No deals.</div>{% endfor %}
+    </div>
+  </div>
+  <form method="post" class="card">
+    {{ csrf_field() }}
+    <h2>Details</h2>
+    <label>Name</label><input type="text" name="name" value="{{ co.name }}" required>
+    <label>Domain</label><input type="text" name="domain" value="{{ co.domain or '' }}">
+    <label>Website</label><input type="text" name="website" value="{{ co.website or '' }}">
+    <label>Industry</label><input type="text" name="industry" value="{{ co.industry or '' }}">
+    <label>Size</label><select name="size">
+      {% for s in ['', '1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'] %}
+      <option {{ 'selected' if (co.size or '') == s }}>{{ s }}</option>{% endfor %}</select>
+    <label>Notes</label><textarea name="notes" style="font-family:inherit">{{ co.notes or '' }}</textarea>
+    <div class="row end" style="margin-top:10px"><button class="primary">Save</button></div>
+  </form>
+</div>
+{% endblock %}

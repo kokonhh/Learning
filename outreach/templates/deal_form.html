@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit deal' if did else 'New deal' }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ 'Edit deal' if did else 'New deal' }}</h1></div>
+<div class="grid side">
+  <form method="post" class="card">
+    {{ csrf_field() }}
+    <label>Deal name</label><input type="text" name="name" required value="{{ deal.get('name') or '' }}">
+    <div class="grid g2">
+      <div><label>Contact</label><select name="contact_id"><option value="">—</option>
+        {% for c in contacts %}<option value="{{ c.id }}" {{ 'selected' if deal.get('contact_id') == c.id }}>{{ c.first_name or '' }} {{ c.last_name or '' }} &lt;{{ c.email }}&gt;{% if c.company_name %} · {{ c.company_name }}{% endif %}</option>{% endfor %}</select></div>
+      <div><label>Company (defaults to the contact's)</label><select name="company_id"><option value="">—</option>
+        {% for co in companies %}<option value="{{ co.id }}" {{ 'selected' if deal.get('company_id') == co.id }}>{{ co.name }}</option>{% endfor %}</select></div>
+      <div><label>Stage</label><select name="stage">
+        {% for s in stages %}<option {{ 'selected' if deal.get('stage') == s }}>{{ s }}</option>{% endfor %}</select></div>
+      <div><label>Value ($)</label><input type="number" step="any" min="0" name="value" value="{{ deal.get('value') or '' }}"></div>
+      <div><label>Probability % (blank = stage default)</label><input type="number" min="0" max="100" name="probability" value="{{ deal.get('probability') if deal.get('probability') is not none else '' }}"></div>
+      <div><label>Expected close date</label><input type="date" name="close_date" value="{{ deal.get('close_date') or '' }}"></div>
+    </div>
+    <label>Notes</label><textarea name="notes" style="font-family:inherit">{{ deal.get('notes') or '' }}</textarea>
+    <label>Lost reason (if lost)</label><input type="text" name="lost_reason" value="{{ deal.get('lost_reason') or '' }}">
+    <div class="row" style="margin-top:12px">
+      {% if did %}<button name="delete" value="1" class="danger" formnovalidate data-confirm="Delete this deal?">Delete</button>{% endif %}
+      <span class="spacer"></span><a class="btn" href="{{ url_for('main.pipeline') }}">Cancel</a><button class="primary">Save</button>
+    </div>
+  </form>
+  <div class="card">
+    <h2>History</h2>
+    <ul class="timeline">{% for a in activities %}<li class="{{ a.kind }}">{{ a.detail }} <span class="muted small">· {{ a.created_at|ago }}</span></li>
+      {% else %}<li class="muted">No history yet.</li>{% endfor %}</ul>
+  </div>
+</div>
+{% endblock %}

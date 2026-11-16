@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Companies{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Companies</h1><div class="muted">Created automatically from your contacts.</div></div></div>
+<div class="card table-wrap">
+  <table>
+    <tr><th>Company</th><th>Industry</th><th>Size</th><th class="num">Contacts</th><th class="num">Top score</th>
+      <th class="num">Deals</th><th class="num">Open pipeline</th></tr>
+    {% for co in companies %}
+    <tr>
+      <td><a href="{{ url_for('main.company_detail', coid=co.id) }}">{{ co.name }}</a>
+        {% if co.domain %}<div class="muted small">{{ co.domain }}</div>{% endif %}</td>
+      <td>{{ co.industry or '' }}</td><td>{{ co.size or '' }}</td>
+      <td class="num">{{ co.n_contacts }}</td><td class="num">{{ co.top_score or 0 }}</td>
+      <td class="num">{{ co.n_deals }}</td><td class="num">{{ co.open_value|money }}</td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="empty">No companies yet.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

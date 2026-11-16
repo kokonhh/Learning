@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Sequences{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Sequences</h1><div class="muted">Multi-step, multi-channel cadences that run automatically and stop when someone replies.</div></div></div>
+<div class="grid side">
+  <div class="card table-wrap">
+    <table>
+      <tr><th>Sequence</th><th>Status</th><th class="num">Steps</th><th class="num">Active / total</th>
+        <th class="num">Sent</th><th class="num">Open</th><th class="num">Reply</th></tr>
+      {% for s in sequences %}{% set st = stats[s.id] %}
+      <tr><td><a href="{{ url_for('main.sequence_detail', sid=s.id) }}">{{ s.name }}</a>
+          {% if s.description %}<div class="muted small">{{ s.description|truncate(80) }}</div>{% endif %}</td>
+        <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
+        <td class="num">{{ s.n_steps }}</td><td class="num">{{ s.n_active }} / {{ s.n_enrolled }}</td>
+        <td class="num">{{ st.sent }}</td><td class="num">{{ st.open_rate }}%</td><td class="num">{{ st.reply_rate }}%</td></tr>
+      {% else %}<tr><td colspan="7" class="empty">No sequences yet — create one on the right.</td></tr>{% endfor %}
+    </table>
+    <p class="small"><a href="{{ url_for('main.sequences', archived=1) }}">Show archived</a></p>
+  </div>
+  <form method="post" class="card">
+    {{ csrf_field() }}
+    <h2>New sequence</h2>
+    <label>Name</label><input type="text" name="name" required placeholder="e.g. Q1 — Heads of Sales">
+    <label>Description</label><input type="text" name="description" placeholder="Who it's for and the angle">
+    <div class="row end" style="margin-top:12px"><button class="primary">Create</button></div>
+  </form>
+</div>
+{% endblock %}

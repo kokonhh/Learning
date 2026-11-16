@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{{ c.first_name or c.email }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ c.first_name or '' }} {{ c.last_name or '' }}{% if not c.first_name and not c.last_name %}{{ c.email }}{% endif %}
+      <span class="badge {{ c.status }}">{{ c.status }}</span>
+      <span class="score {{ 'hot' if c.score >= 60 else 'warm' if c.score >= 35 }}" title="Lead score">{{ c.score }}</span></h1>
+    <div class="muted">{{ c.title or '' }}{% if c.company_name %} at <a href="{{ url_for('main.company_detail', coid=c.company_id) }}">{{ c.company_name }}</a>{% endif %}</div>
+  </div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('main.contact_edit', cid=c.id) }}">Edit</a>
+    <a class="btn" href="{{ url_for('main.deal_edit', contact_id=c.id) }}">+ Deal</a>
+    <form method="post" action="{{ url_for('main.contact_action', cid=c.id) }}" class="inline">{{ csrf_field() }}
+      <input type="hidden" name="action" value="meeting"><button class="primary">Meeting booked</button></form>
+  </div>
+</div>
+
+<div class="grid side">
+  <div>
+    <div class="card">
+      <h2>Log activity</h2>
+      <form method="post" action="{{ url_for('main.contact_action', cid=c.id) }}">
+        {{ csrf_field() }}
+        <textarea name="text" placeholder="Notes, call summary, reply detail…" style="min-height:70px;font-family:inherit"></textarea>
+        <div class="row" style="margin-top:8px">
+          <button name="action" value="note">Add note</button>
+          <button name="action" value="call">Log call</button>
+          <button name="action" value="replied" title="Stops sequences that stop on reply">Mark replied</button>
+          <span class="spacer"></span>
+          <input type="date" name="due" style="width:auto">
+          <select name="task_type"><option value="todo">To-do</option><option value="call">Call</option>
+            <option value="linkedin">LinkedIn</option><option value="follow_up">Follow up</option></select>
+          <button name="action" value="task">Add as task</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary><b>Send a one-off email</b></summary>
+        <form method="post" action="{{ url_for('main.contact_email', cid=c.id) }}" data-preview="#oneoff-preview" data-contact="{{ c.id }}">
+          {{ csrf_field() }}
+          <label>Start from template (optional — fields below override it)</label>
+          <select name="template_id"><option value="">—</option>
+            {% for t in templates %}<option value="{{ t.id }}">{{ t.name }}</option>{% endfor %}</select>
+          <label>Subject</label><input type="text" name="subject">
+          <label>Body</label><textarea name="body"></textarea>
+          <label>Preview</label><div id="oneoff-preview" class="preview"></div>
+          <div class="row end" style="margin-top:8px"><button class="primary">Send</button></div>
+        </form>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Timeline</h2>
+      <ul class="timeline">
+        {% for a in activities %}
+        <li class="{{ a.kind }}"><b>{{ a.kind.replace('_', ' ')|capitalize }}</b>
+          <span class="muted small">· {{ a.created_at }} UTC</span>
+          {% if a.detail %}<div>{{ a.detail|nl2br }}</div>{% endif %}</li>
+        {% else %}<li class="muted">No activity yet.</li>{% endfor %}
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Emails</h2>
+      {% for m in messages %}
+      <details style="border-bottom:1px solid var(--border);padding:8px 0">
+        <summary>
+          {% if m.direction == 'in' %}<span class="badge replied">received</span>{% else %}<span class="badge {{ m.status }}">{{ m.status }}</span>{% endif %}
+          {{ m.subject }} <span class="muted small">· {{ m.created_at|ago }}
+          {% if m.opened_at %}· opened {{ m.open_count }}×{% endif %}{% if m.clicked_at %} · clicked {{ m.click_count }}×{% endif %}
+          {% if m.replied_at %} · replied{% endif %}</span>
+        </summary>
+        {% if m.error %}<div class="flash error small">{{ m.error }}</div>{% endif %}
+        <div class="preview">{{ m.body_text }}</div>
+      </details>
+      {% else %}<div class="muted">No emails yet.</div>{% endfor %}
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Details</h2>
+      <table class="small">
+        <tr><td class="muted">Email</td><td>{{ c.email }}</td></tr>
+        {% if c.phone %}<tr><td class="muted">Phone</td><td><a href="tel:{{ c.phone }}">{{ c.phone }}</a></td></tr>{% endif %}
+        {% if c.linkedin_url %}<tr><td class="muted">LinkedIn</td><td><a href="{{ c.linkedin_url }}" target="_blank" rel="noopener">Profile ↗</a></td></tr>{% endif %}
+        <tr><td class="muted">Source</td><td>{{ c.source or '—' }}</td></tr>
+        <tr><td class="muted">Owner</td><td>{{ c.owner or '—' }}</td></tr>
+        <tr><td class="muted">Tags</td><td>{% for t in c.tags|tags %}<span class="tag">{{ t }}</span>{% else %}—{% endfor %}</td></tr>
+        <tr><td class="muted">Last contacted</td><td>{{ c.last_contacted_at|ago if c.last_contacted_at else '—' }}</td></tr>
+        {% for k, v in c.custom_fields.items() %}<tr><td class="muted">{{ k }}</td><td>{{ v }}</td></tr>{% endfor %}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Sequences</h2>
+      {% for e in enrollments %}
+      <div style="margin-bottom:10px">
+        <a href="{{ url_for('main.sequence_detail', sid=e.sequence_id) }}">{{ e.seq_name }}</a>
+        <span class="badge {{ e.status }}">{{ e.status }}</span>
+        <div class="muted small">Step {{ e.current_step }}{% if e.status == 'active' %} · {{ next_run_label(e.next_run_at) }}{% endif %}</div>
+        <div class="row" style="margin-top:4px">
+          {% if e.status == 'active' %}
+          <form method="post" action="{{ url_for('main.enrollment_action', eid=e.id, action='pause') }}">{{ csrf_field() }}<button class="sm">Pause</button></form>
+          {% elif e.status == 'paused' %}
+          <form method="post" action="{{ url_for('main.enrollment_action', eid=e.id, action='resume') }}">{{ csrf_field() }}<button class="sm">Resume</button></form>
+          {% endif %}
+          {% if e.status in ('active', 'paused') %}
+          <form method="post" action="{{ url_for('main.enrollment_action', eid=e.id, action='stop') }}">{{ csrf_field() }}<button class="sm danger">Stop</button></form>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}<div class="muted small" style="margin-bottom:8px">Not in any sequence.</div>{% endfor %}
+      <form method="post" action="{{ url_for('main.contact_action', cid=c.id) }}" class="row">{{ csrf_field() }}
+        <input type="hidden" name="action" value="enroll">
+        <select name="sequence_id" required style="flex:1"><option value="">Add to sequence…</option>
+          {% for s in sequences %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+        <button>Enroll</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Open tasks</h2>
+      {% for t in tasks %}
+      <form method="post" action="{{ url_for('main.task_action', task_id=t.id) }}" class="row" style="margin-bottom:6px">{{ csrf_field() }}
+        <span style="flex:1">{{ t.title }} <span class="muted small">· due {{ t.due_at|ago }}</span></span>
+        <button class="sm" name="action" value="done">Done</button>
+      </form>
+      {% else %}<div class="muted small">Nothing open.</div>{% endfor %}
+    </div>
+
+    <div class="card">
+      <h2>Deals</h2>
+      {% for d in deals %}
+      <div><a href="{{ url_for('main.deal_edit', did=d.id) }}">{{ d.name }}</a> · {{ d.value|money }}
+        <span class="badge {{ d.stage }}">{{ d.stage }}</span></div>
+      {% else %}<div class="muted small">No deals.</div>{% endfor %}
+    </div>
+
+    <div class="card">
+      <h2>Danger zone</h2>
+      <form method="post" action="{{ url_for('main.contact_action', cid=c.id) }}" class="row">{{ csrf_field() }}
+        <button name="action" value="unsubscribe" class="danger" data-confirm="Unsubscribe and suppress this address?">Unsubscribe</button>
+        <button name="action" value="delete" class="danger" data-confirm="Delete this contact and all its history?">Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

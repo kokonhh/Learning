@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Settings</h1><a class="btn" href="{{ url_for('main.suppressions') }}">Suppression list</a></div>
+<form method="post">
+  {{ csrf_field() }}
+  <div class="grid g2">
+    <div class="card">
+      <h2>Sender identity</h2>
+      <label>Your name</label><input type="text" name="sender_name" value="{{ s.sender_name }}">
+      <label>From email</label><input type="email" name="sender_email" value="{{ s.sender_email }}">
+      <label>Company name</label><input type="text" name="company_name" value="{{ s.company_name }}">
+      <label>Physical mailing address (required in commercial email by CAN-SPAM and similar laws)</label>
+      <input type="text" name="physical_address" value="{{ s.physical_address }}">
+      <label>Signature (merge fields allowed)</label><textarea name="signature" style="min-height:90px">{{ s.signature }}</textarea>
+    </div>
+    <div class="card">
+      <h2>Sending rules</h2>
+      <div class="grid g2">
+        <div><label>Daily send limit</label><input type="number" min="0" name="daily_send_limit" value="{{ s.daily_send_limit }}"></div>
+        <div><label>Seconds between sends</label><input type="number" min="0" name="min_seconds_between_sends" value="{{ s.min_seconds_between_sends }}"></div>
+        <div><label>Window start (hour)</label><input type="number" min="0" max="23" name="send_window_start" value="{{ s.send_window_start }}"></div>
+        <div><label>Window end (hour)</label><input type="number" min="1" max="24" name="send_window_end" value="{{ s.send_window_end }}"></div>
+      </div>
+      <label>Timezone for the window (IANA, e.g. America/New_York, Europe/London)</label>
+      <input type="text" name="send_timezone" value="{{ s.send_timezone }}">
+      <label class="check" style="margin-top:10px"><input type="checkbox" name="send_weekdays_only" value="1" {{ 'checked' if s.send_weekdays_only == '1' }}> Weekdays only</label>
+      <label class="check"><input type="checkbox" name="track_opens" value="1" {{ 'checked' if s.track_opens == '1' }}> Track opens (adds a 1px image; slightly hurts deliverability)</label>
+      <label class="check"><input type="checkbox" name="track_clicks" value="1" {{ 'checked' if s.track_clicks == '1' }}> Track link clicks</label>
+      <label>Public base URL (used for tracking &amp; unsubscribe links — must be reachable by recipients)</label>
+      <input type="url" name="base_url" value="{{ s.base_url }}">
+    </div>
+    <div class="card">
+      <h2>Pipeline</h2>
+      <label>Deal stages, in order (comma separated; keep "won" and "lost")</label>
+      <input type="text" name="pipeline_stages" value="{{ s.pipeline_stages }}">
+    </div>
+    <div class="card small">
+      <h2>Mail transport &amp; integrations</h2>
+      <p>Current transport: <b>{{ mail_backend }}</b>. Transport, inbox and API are configured with environment variables
+        (see <code>.env.example</code>):</p>
+      <ul class="muted">
+        <li><code>OUTREACH_MAIL_BACKEND=smtp</code> + <code>SMTP_HOST</code>, <code>SMTP_PORT</code>, <code>SMTP_USER</code>, <code>SMTP_PASSWORD</code></li>
+        <li><code>IMAP_HOST</code>, <code>IMAP_USER</code>, <code>IMAP_PASSWORD</code> — auto-detect replies &amp; bounces</li>
+        <li><code>OUTREACH_API_KEY</code> — enables the lead/event webhooks ({{ 'enabled' if api_enabled else 'disabled' }})</li>
+        <li><code>OUTREACH_PASSWORD</code> — require a password for this UI</li>
+      </ul>
+    </div>
+  </div>
+  <div class="row end"><button class="primary">Save settings</button></div>
+</form>
+{% endblock %}
