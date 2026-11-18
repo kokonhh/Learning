@@ -182,7 +182,8 @@ const DAY = 864e5;
 const COLS = ["contacts", "templates", "sequences", "enrollments", "tasks", "deals", "emails"];
 const STATUSES = ["new", "contacted", "engaged", "replied", "meeting", "qualified", "customer", "lost", "unsubscribed", "bounced"];
 const TERMINAL = ["unsubscribed", "bounced"];
-const STEP_TYPES = { email: "Email", linkedin: "LinkedIn", call: "Phone call", task: "Manual task" };
+const STEP_TYPES = { email: "Email", sms: "Text message", linkedin: "LinkedIn", call: "Phone call", task: "Manual task" };
+const SMS_STOP = " Reply STOP to opt out.";
 const PROB = { lead: 10, qualified: 20, meeting: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
 const DEFAULTS = { senderName: "", company: "", address: "", signature: "Best,\n{{sender_name}}\n{{sender_company}}",
   dailyLimit: 30, mode: "draft", stages: ["lead", "qualified", "meeting", "proposal", "negotiation", "won", "lost"] };
@@ -214,6 +215,12 @@ function ago(ms) {
 }
 const name = c => c ? ([c.first_name, c.last_name].filter(Boolean).join(" ") || c.email) : "Deleted contact";
 const pill = (s, cls) => `<span class="pill ${esc(cls || s)}">${esc(s)}</span>`;
+const smsInfo = t => { const uni = /[^\x00-\x7F€£¥èéùìòÇØøÅåÄÖÑÜßÉäöñüà]/.test(t), per = uni ? 70 : 160, multi = uni ? 67 : 153;
+  return { n: t.length, parts: t.length <= per ? 1 : Math.ceil(t.length / multi) }; };
+const canText = c => !!(c && c.smsOk && String(c.phone || "").replace(/\D/g, "").length >= 7);
+function composeSms(c, step) { const r = fill(step.body || "", ctxFor(c), c.id + "sms"); const text = r.out.trim() + SMS_STOP;
+  return { text, missing: r.missing, problem: r.missing.length ? "Missing " + r.missing.join(", ") : !r.out.trim() ? "No message" : "" }; }
+async function copyText(t, what) { try { await navigator.clipboard.writeText(t); toast((what || "Text") + " copied."); } catch (_) { toast("Couldn't copy automatically. Select the text and copy it.", "bad"); } }
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
 function score(c) {
   if (["unsubscribed", "bounced", "lost"].includes(c.status)) return 0;
@@ -299,6 +306,7 @@ function dueItems(now = Date.now()) {
     if (!step) { items.push({ kind: "finish", e, seq, c }); continue; }
     if (TERMINAL.includes(c.status)) { items.push({ kind: "stop", e, seq, c }); continue; }
     if (step.type === "email") items.push({ kind: "email", e, seq, c, step, m: compose(c, step, e, S.overrides[e.id]) });
+    else if (step.type === "sms") items.push({ kind: "sms", e, seq, c, step, ok: canText(c), m: composeSms(c, step) });
     else items.push({ kind: "task", e, seq, c, step });
   }
   return items.sort((a, b) => a.e.nextRun - b.e.nextRun);
@@ -357,9 +365,11 @@ async function completeTask(t, status, outcome) {
   const c = S.data.contacts[t.contactId];
   if (c) {
     const extra = {};
-    if (status === "done" && ["call", "linkedin"].includes(t.type)) { extra.lastContacted = Date.now(); if (c.status === "new") extra.status = "contacted"; }
-    await logC(c.id, t.type === "call" ? "call" : t.type === "linkedin" ? "linkedin" : "task", t.title + " — " + status + (outcome ? ": " + outcome : ""), extra);
+    if (status === "done" && ["call", "linkedin", "sms"].includes(t.type)) { extra.lastContacted = Date.now(); if (c.status === "new") extra.status = "contacted"; }
+    await logC(c.id, ["call", "linkedin", "sms"].includes(t.type) ? t.type : "task", (t.type === "sms" && status === "done" ? "Texted: " + String(t.notes || "").slice(0, 120) : t.title + " — " + status) + (outcome ? " (" + outcome + ")" : ""), extra);
     if (outcome === "meeting booked") await meeting(c.id, "Meeting booked (from task)");
+    if (outcome === "they replied") await markReplied(c.id, "Replied to a text");
+    if (outcome === "asked to stop") { await patch("contacts", c.id, { smsOk: false }); await optOut(c.id, "unsubscribed"); }
   }
   const e = t.enrollId && S.data.enrollments[t.enrollId];
   if (e && e.status === "active" && e.step === t.step) { const seq = S.data.sequences[e.seqId]; if (seq) await patch("enrollments", e.id, nextFor(e, seq, Date.now())); }
@@ -392,6 +402,14 @@ async function runOutbox() {
       if (it.kind === "orphan") { await patch("enrollments", it.e.id, { status: "stopped", nextRun: null }); continue; }
       if (it.kind === "finish") { await patch("enrollments", it.e.id, { status: "completed", nextRun: null, finishedAt: now }); st.done++; continue; }
       if (it.kind === "stop") { await patch("enrollments", it.e.id, { status: "stopped", nextRun: null, finishedAt: now }); continue; }
+      if (it.kind === "sms") {
+        if (!it.ok) { await patch("enrollments", it.e.id, nextFor(it.e, it.seq, now)); await logC(it.c.id, "sms", "Text step skipped: " + (it.c.smsOk ? "no valid phone number" : "hasn't agreed to texts")); continue; }
+        if (it.m.problem) { st.held++; continue; }
+        await put("tasks", newId(), { contactId: it.c.id, enrollId: it.e.id, step: it.e.step, type: "sms", title: "Text " + name(it.c),
+          notes: it.m.text, phone: it.c.phone, status: "open", due: now, createdAt: now });
+        await patch("enrollments", it.e.id, { nextRun: null });
+        st.tasks++; continue;
+      }
       if (it.kind === "task") {
         await put("tasks", newId(), { contactId: it.c.id, enrollId: it.e.id, step: it.e.step, type: it.step.type === "task" ? "todo" : it.step.type,
           title: STEP_TYPES[it.step.type] + " — " + name(it.c), notes: it.step.instructions || "", status: "open", due: now, createdAt: now });
@@ -461,7 +479,7 @@ const ALIASES = {
   last_name: ["last name", "lastname", "surname", "family name", "last"], full_name: ["name", "full name", "contact name"],
   title: ["title", "job title", "position", "role"], phone: ["phone", "phone number", "mobile", "telephone", "direct phone"],
   linkedin_url: ["linkedin", "linkedin url", "linkedin profile", "person linkedin url"], company: ["company", "company name", "organization", "organisation", "account", "account name"],
-  tags: ["tags", "tag", "labels", "list"], source: ["source", "lead source"] };
+  tags: ["tags", "tag", "labels", "list"], source: ["source", "lead source"], sms_ok: ["sms ok", "sms consent", "text ok", "texts ok", "sms opt in", "sms optin"] };
 const normH = h => lc(h).replace(/_/g, " ").replace(/\s+/g, " ");
 function mapHeader(h) { const n = normH(h); for (const [f, names] of Object.entries(ALIASES)) if (names.includes(n) || n === f.replace(/_/g, " ")) return f; return "custom:" + h.trim(); }
 function parseCSV(text) {
@@ -495,10 +513,11 @@ async function importCSV(text, extraTags, seqId) {
     if (ex) {
       const upd = { tags: tagsOf([...(ex.tags || []), ...tags].join(",")), custom: { ...(ex.custom || {}), ...custom } };
       for (const k of ["first_name", "last_name", "title", "phone", "linkedin_url", "company"]) if (rec[k]) upd[k] = rec[k];
+      if (rec.sms_ok) upd.smsOk = /^(y|yes|true|1|x)$/i.test(rec.sms_ok);
       ops.push(() => patch("contacts", ex.id, upd)); res.updated++; res.ids.push(ex.id);
     } else {
       const id = newId(), doc = { email, first_name: rec.first_name || "", last_name: rec.last_name || "", title: rec.title || "", phone: rec.phone || "",
-        linkedin_url: rec.linkedin_url || "", company: rec.company || "", tags, custom, status: "new", source: rec.source || "CSV import",
+        linkedin_url: rec.linkedin_url || "", company: rec.company || "", tags, custom, status: "new", smsOk: /^(y|yes|true|1|x)$/i.test(rec.sms_ok || ""), source: rec.source || "CSV import",
         createdAt: Date.now(), log: [{ t: Date.now(), k: "created", d: "Imported from CSV" }] };
       byEmail[email] = { id, ...doc };
       ops.push(() => put("contacts", id, doc)); res.created++; res.ids.push(id);
@@ -610,7 +629,7 @@ function vDashboard() {
 
 // ---------- Outbox
 function vOutbox() {
-  const items = dueItems(), emails = items.filter(i => i.kind === "email"), tasks = items.filter(i => i.kind === "task");
+  const items = dueItems(), emails = items.filter(i => i.kind === "email"), tasks = items.filter(i => i.kind === "task"), texts = items.filter(i => i.kind === "sms");
   const left = Math.max(0, (+S.settings.dailyLimit || 0) - sentToday());
   const ready = emails.filter(i => !i.m.problem && !S.skip.has(i.e.id));
   const send = S.settings.mode === "send";
@@ -620,9 +639,9 @@ function vOutbox() {
     <div class="row"><label class="check"><input type="checkbox" id="mode-toggle" data-act="mode" ${send ? "checked" : ""}> Send right away (instead of drafts)</label></div></div>
   <div class="stack">
   ${S.gmail !== "ok" ? `<div class="banner bad">Gmail isn't available on this page right now, so emails can't go out. Connect Gmail in claude.ai Settings → Connectors and open this page inside Claude.</div>` : ""}
-  <div class="card row"><div><b>${ready.length}</b> email${ready.length === 1 ? "" : "s"} ready · <b>${tasks.length}</b> call/LinkedIn task${tasks.length === 1 ? "" : "s"} to create · <span class="muted">${left} of today's ${+S.settings.dailyLimit || 0} email limit left</span></div>
+  <div class="card row"><div><b>${ready.length}</b> email${ready.length === 1 ? "" : "s"} ready · <b>${tasks.length + texts.filter(i => i.ok && !i.m.problem).length}</b> task${tasks.length + texts.length === 1 ? "" : "s"} to create (calls, LinkedIn, texts) · <span class="muted">${left} of today's ${+S.settings.dailyLimit || 0} email limit left</span></div>
     <span class="spacer"></span>
-    <button class="btn primary" data-act="run" ${(!items.length || S.busy || (ready.length && S.gmail !== "ok" && !tasks.length)) ? "disabled" : ""}>${send ? `Send ${Math.min(ready.length, left)} email${Math.min(ready.length, left) === 1 ? "" : "s"}` : `Create ${Math.min(ready.length, left)} Gmail draft${Math.min(ready.length, left) === 1 ? "" : "s"}`}${tasks.length ? ` + ${tasks.length} task${tasks.length === 1 ? "" : "s"}` : ""}</button></div>
+    <button class="btn primary" data-act="run" ${(!items.length || S.busy || (ready.length && S.gmail !== "ok" && !tasks.length && !texts.length)) ? "disabled" : ""}>${send ? `Send ${Math.min(ready.length, left)} email${Math.min(ready.length, left) === 1 ? "" : "s"}` : `Create ${Math.min(ready.length, left)} Gmail draft${Math.min(ready.length, left) === 1 ? "" : "s"}`}${tasks.length + texts.length ? ` + ${tasks.length + texts.length} task${tasks.length + texts.length === 1 ? "" : "s"}` : ""}</button></div>
   ${emails.length ? emails.map(i => {
     const skipped = S.skip.has(i.e.id);
     return `<div class="card"><div class="row" style="align-items:flex-start">
@@ -633,7 +652,11 @@ function vOutbox() {
         <button class="btn sm" data-act="edit-out" data-id="${i.e.id}">Edit</button>
         <button class="btn sm" data-act="skip" data-id="${i.e.id}">${skipped ? "Include" : "Skip this run"}</button></div></div>
       <div class="preview" style="margin-top:10px;${skipped ? "opacity:.45" : ""}"><div class="subj">${esc(i.m.subject || "(no subject)")}</div>${esc(i.m.body)}</div></div>`;
-  }).join("") : `<div class="card empty">No emails are due. ${list("sequences").some(s => s.status === "active") ? "Enroll more contacts or wait for the next steps." : `Activate a sequence and enroll contacts to fill the Outbox. <a href="#sequences">Go to Sequences</a>`}</div>`}
+  }).join("") : texts.length ? "" : `<div class="card empty">No emails are due. ${list("sequences").some(s => s.status === "active") ? "Enroll more contacts or wait for the next steps." : `Activate a sequence and enroll contacts to fill the Outbox. <a href="#sequences">Go to Sequences</a>`}</div>`}
+  ${texts.length ? `<div class="card"><h2>Text messages</h2><p class="small muted">Each one becomes a task with the message ready to copy, so you can send it from your phone.</p>
+    <div class="stack" style="gap:10px">${texts.map(i => { const inf = smsInfo(i.m.text); return `<div><button class="linkish" data-act="contact" data-id="${i.c.id}"><b>${esc(name(i.c))}</b></button> <span class="small muted mono">${esc(i.c.phone || "no phone")}</span>
+      ${!i.ok ? " " + pill(i.c.smsOk ? "will skip: no valid phone" : "will skip: hasn't agreed to texts", "warn") : i.m.problem ? " " + pill("held: " + i.m.problem, "warn") : ` <span class="small muted">${inf.n} characters · ${inf.parts} SMS</span>`}
+      <div class="preview" style="margin-top:6px">${esc(i.m.text)}</div></div>`; }).join("")}</div></div>` : ""}
   ${tasks.length ? `<div class="card"><h2>Tasks this run will create</h2><ul class="timeline">${tasks.map(i => `<li>${esc(STEP_TYPES[i.step.type])} — ${esc(name(i.c))} <span class="small muted">· ${esc(i.step.instructions || "")}</span></li>`).join("")}</ul></div>` : ""}
   ${upcoming.length ? `<div class="card"><h2>Coming up</h2><div class="tablewrap"><table><tbody>${upcoming.map(e => { const s = S.data.sequences[e.seqId], st = (s.steps || [])[e.step] || {}; return `<tr><td>${esc(name(S.data.contacts[e.contactId]))}</td><td class="muted">${esc(STEP_TYPES[st.type] || "")} · ${esc(s.name)}</td><td class="r muted">${ago(e.nextRun)}</td></tr>`; }).join("")}</tbody></table></div></div>` : ""}
   </div>`);
@@ -645,13 +668,14 @@ function vTasks() {
   const due = open.filter(t => t.due <= now + 0), later = open.filter(t => t.due > now);
   const done = list("tasks").filter(t => t.status !== "open" && t.doneAt > now - DAY).sort((a, b) => b.doneAt - a.doneAt);
   const card = t => { const c = S.data.contacts[t.contactId] || {};
-    const outs = t.type === "call" ? ["connected", "left voicemail", "no answer", "wrong number"] : t.type === "linkedin" ? ["connection sent", "message sent"] : [];
+    const outs = t.type === "call" ? ["connected", "left voicemail", "no answer", "wrong number"] : t.type === "linkedin" ? ["connection sent", "message sent"] : t.type === "sms" ? ["text sent", "they replied", "asked to stop"] : [];
     return `<div class="card"><div class="row" style="align-items:flex-start"><div style="flex:1;min-width:220px">
       <div>${pill(t.type === "follow_up" ? "follow-up" : t.type)} <b>${esc(t.title)}</b></div>
       ${c.id ? `<div class="small" style="margin-top:4px"><button class="linkish" data-act="contact" data-id="${c.id}">${esc(name(c))}</button> <span class="muted">${esc([c.title, c.company].filter(Boolean).join(" · "))}</span></div>
         <div class="small muted mono" style="margin-top:2px">${esc(c.email || "")}${c.phone ? " · " + esc(c.phone) : ""}</div>
         ${c.linkedin_url ? `<div class="small"><a href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">Open LinkedIn profile</a></div>` : ""}` : ""}
-      ${t.notes ? `<div class="small" style="margin-top:4px">${esc(t.notes)}</div>` : ""}<div class="small muted">Due ${ago(t.due)}</div></div>
+      ${t.type === "sms" ? `<div class="preview" style="margin-top:6px">${esc(t.notes)}</div><div class="row" style="margin-top:6px"><button class="btn sm primary" data-act="copy-sms" data-id="${t.id}">Copy message</button><button class="btn sm" data-act="copy-phone" data-id="${t.id}">Copy number</button><span class="small muted">Send it from your phone, then mark it done.</span></div>`
+        : t.notes ? `<div class="small" style="margin-top:4px">${esc(t.notes)}</div>` : ""}<div class="small muted">Due ${ago(t.due)}</div></div>
       <div class="row"><select id="out-${t.id}" aria-label="Outcome"><option value="">Outcome…</option>${[...outs, "interested", "meeting booked", "not interested"].map(o => `<option>${o}</option>`).join("")}</select>
         <button class="btn sm primary" data-act="task-done" data-id="${t.id}">Done</button><button class="btn sm" data-act="task-skip" data-id="${t.id}">Skip</button>
         <button class="btn sm" data-act="task-snooze" data-id="${t.id}" title="Move to tomorrow">Tomorrow</button></div></div></div>`; };
@@ -681,7 +705,7 @@ function vContacts() {
     <select id="bulk-seq" aria-label="Sequence"><option value="">Choose a sequence…</option>${seqs.map(s => `<option value="${s.id}">${esc(s.name)}${s.status !== "active" ? " (" + s.status + ")" : ""}</option>`).join("")}</select>
     <button class="btn sm primary" data-act="bulk-enroll">Enroll</button>
     <input type="text" id="bulk-tag" placeholder="tag" style="width:110px"><button class="btn sm" data-act="bulk-tag">Add tag</button>
-    <button class="btn sm danger" data-act="bulk-delete">Delete</button><button class="btn sm" data-act="bulk-clear">Clear</button></div>` : ""}
+    <button class="btn sm" data-act="bulk-sms">Agreed to texts</button><button class="btn sm danger" data-act="bulk-delete">Delete</button><button class="btn sm" data-act="bulk-clear">Clear</button></div>` : ""}
   <div class="card tablewrap">${rows.length ? `<table><thead><tr><th><input type="checkbox" data-act="sel-all" aria-label="Select all" ${rows.length && rows.every(c => S.sel.has(c.id)) ? "checked" : ""}></th><th>Score</th><th>Name</th><th>Company</th><th>Status</th><th>Tags</th><th class="r">Last contacted</th></tr></thead><tbody>
     ${rows.slice(0, 400).map(c => `<tr class="click" data-act="contact" data-id="${c.id}"><td><input type="checkbox" data-act="sel" data-id="${c.id}" aria-label="Select ${esc(name(c))}" ${S.sel.has(c.id) ? "checked" : ""}></td>
       <td>${scoreChip(c)}</td><td><b>${esc(name(c))}</b><div class="small muted">${esc(c.title || "")}${c.title ? " · " : ""}<span class="mono">${esc(c.email)}</span></div></td>
@@ -726,7 +750,7 @@ function vSequence(s) {
   <div class="grid side">
     <div class="card"><div class="row" style="margin-bottom:10px"><h2>Steps</h2><span class="spacer"></span><button class="btn sm primary" data-act="step-add">Add step</button></div>
       <div class="steps">${steps.map((x, i) => { day += +x.delay || 0; const tpl = x.templateId && S.data.templates[x.templateId];
-        const what = x.type === "email" ? (x.thread && i > 0 ? "Reply in the same thread" : (x.subject || (tpl && tpl.subject) || "")) + (tpl ? ` <span class="muted small">· template “${esc(tpl.name)}”</span>` : "") : esc(x.instructions || "No instructions");
+        const what = x.type === "sms" ? esc(String(x.body || "").slice(0, 120)) : x.type === "email" ? (x.thread && i > 0 ? "Reply in the same thread" : (x.subject || (tpl && tpl.subject) || "")) + (tpl ? ` <span class="muted small">· template “${esc(tpl.name)}”</span>` : "") : esc(x.instructions || "No instructions");
         return `<div class="step"><div class="day">Day<b>${day}</b></div><div><div class="kind">${STEP_TYPES[x.type]}</div><div>${x.type === "email" && !(x.thread && i > 0) ? esc(x.subject || (tpl && tpl.subject) || "") + (tpl ? ` <span class="muted small">· template “${esc(tpl.name)}”</span>` : "") : what}</div></div>
           <div class="row"><button class="btn sm" data-act="step-up" data-i="${i}" ${i ? "" : "disabled"} aria-label="Move up">↑</button><button class="btn sm" data-act="step-down" data-i="${i}" ${i < steps.length - 1 ? "" : "disabled"} aria-label="Move down">↓</button>
           <button class="btn sm" data-act="step-edit" data-i="${i}">Edit</button><button class="btn sm danger" data-act="step-del" data-i="${i}" aria-label="Delete step">✕</button></div></div>`; }).join("") || `<div class="empty">No steps yet. Add the first email.</div>`}</div></div>
@@ -785,6 +809,7 @@ function vSetup() {
     <li>Your data is saved with this page. Only you, and people you give edit access, can see it.</li>
     <li>Emails go out through your own Gmail, so replies land in your inbox. Use <b>Check Gmail for replies</b> on the Dashboard to stop sequences for people who answered.</li>
     <li>Nothing runs in the background: open the Outbox and run it once a day.</li>
+    <li>Text-message steps become tasks with the message ready to copy, and only go to people you've marked as agreeing to texts.</li>
     <li>Opens and clicks aren't tracked here. Replies are the number that matters.</li></ul></div>`);
 }
 
@@ -801,6 +826,7 @@ function showContact(id) {
       <div class="row"><button class="btn sm" data-c="note">Add note</button><button class="btn sm" data-c="call">Log call</button><button class="btn sm" data-c="replied">Mark replied</button><button class="btn sm primary" data-c="meeting">Meeting booked</button></div></div>
     <div class="row"><select id="c-seq" aria-label="Sequence" style="flex:1"><option value="">Add to sequence…</option>${seqs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select><button class="btn sm" data-c="enroll">Enroll</button></div>
     <div class="row"><label class="f" style="flex:1">Status<select id="c-status">${STATUSES.map(s => `<option ${c.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label></div>
+    <div class="small">Texts: ${canText(c) ? pill("allowed", "done") + ` <button class="btn sm" data-c="text">Write a text</button>` : pill(c.smsOk ? "no valid phone" : "not agreed", "warn") + ` <span class="muted">Edit details to add a phone number and consent.</span>`}</div>
     <div class="row"><button class="btn sm" data-c="edit">Edit details</button><button class="btn sm" data-c="deal">New deal</button><button class="btn sm danger" data-c="optout">Do not contact</button><button class="btn sm danger" data-c="delete">Delete</button></div>
     ${ens.length ? `<div><h3>Sequences</h3>${ens.map(e => `<div class="small">${esc((S.data.sequences[e.seqId] || {}).name || "Deleted sequence")} ${pill(e.status)}</div>`).join("")}</div>` : ""}
     ${deals.length ? `<div><h3>Deals</h3>${deals.map(d => `<div class="small">${esc(d.name)} · ${money(d.value)} ${pill(d.stage)}</div>`).join("")}</div>` : ""}
@@ -815,6 +841,7 @@ function showContact(id) {
     const b = ev.target.closest("[data-c]"); if (!b) return; const a = b.dataset.c, note = $("#c-note") ? $("#c-note").value.trim() : "";
     if (a === "edit") return contactForm(id);
     if (a === "deal") return dealForm(null, id);
+    if (a === "text") return textForm(id);
     if (!needDb()) return;
     if (a === "note") { if (!note) return toast("Write a note first."); await logC(id, "note", note); }
     if (a === "call") await logC(id, "call", note || "Logged a call", { lastContacted: Date.now(), ...(c.status === "new" ? { status: "contacted" } : {}) });
@@ -829,6 +856,20 @@ function showContact(id) {
     showContact(id);
   });
 }
+function textForm(id) {
+  const c = S.data.contacts[id]; if (!c) return;
+  openModal(`<div class="modal-h"><div><h2>Text ${esc(name(c))}</h2><div class="small mono">${esc(c.phone)}</div></div><button class="btn sm" data-close>Close</button></div>
+  <label class="f">Message<textarea id="tx-body" style="min-height:110px;font-family:var(--body)">Hi ${esc(c.first_name || "there")}, ${S.settings.senderName ? "it's " + esc(S.settings.senderName) + (S.settings.company ? " from " + esc(S.settings.company) : "") + ". " : ""}</textarea></label>
+  <div class="small muted" id="tx-count"></div>
+  <div class="row"><button class="btn primary" id="tx-copy">Copy message</button><button class="btn" id="tx-phone">Copy number</button><span class="spacer"></span><button class="btn" id="tx-log">I sent it — log it</button></div>
+  <p class="small muted">Send it from your phone. “Reply STOP to opt out.” is added when you copy.</p>`);
+  const full = () => $("#tx-body").value.trim() + SMS_STOP;
+  const cnt = () => { const i = smsInfo(full()); $("#tx-count").textContent = `${i.n} characters · ${i.parts} SMS`; };
+  cnt(); $("#tx-body").oninput = cnt; $("#modal-root [data-close]").onclick = closeModal;
+  $("#tx-copy").onclick = () => copyText(full(), "Message");
+  $("#tx-phone").onclick = () => copyText(c.phone, "Number");
+  $("#tx-log").onclick = async () => { if (!needDb()) return; await logC(id, "sms", "Texted: " + full().slice(0, 120), { lastContacted: Date.now(), ...(c.status === "new" ? { status: "contacted" } : {}) }); toast("Logged."); showContact(id); };
+}
 function contactForm(id) {
   const c = id ? S.data.contacts[id] : {};
   openModal(`<div class="modal-h"><h2>${id ? "Edit contact" : "Add contact"}</h2><button class="btn sm" data-close>Close</button></div>
@@ -836,6 +877,7 @@ function contactForm(id) {
     ${[["email", "Email *", "email"], ["first_name", "First name"], ["last_name", "Last name"], ["title", "Job title"], ["company", "Company"], ["phone", "Phone"], ["linkedin_url", "LinkedIn URL", "url"]].map(([k, l, t]) =>
       `<label class="f">${l}<input type="${t || "text"}" name="${k}" value="${esc(c[k] || "")}" ${k === "email" ? "required" : ""}></label>`).join("")}
     <label class="f">Tags (comma separated)<input type="text" name="tags" value="${esc((c.tags || []).join(", "))}"></label>
+    <label class="check" style="grid-column:1/-1"><input type="checkbox" name="smsOk" ${c.smsOk ? "checked" : ""}> This person agreed to receive text messages from me</label>
     <label class="f" style="grid-column:1/-1">Custom fields, one per line as <span class="mono">key: value</span> — use them in emails as <span class="mono">{{key}}</span>
       <textarea name="custom" style="min-height:70px">${esc(Object.entries(c.custom || {}).map(([k, v]) => k + ": " + v).join("\n"))}</textarea></label>
     <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Save</button></div></form>`);
@@ -845,7 +887,7 @@ function contactForm(id) {
     if (!EMAIL_RE.test(email)) return toast("Enter a valid email address.", "bad");
     if (list("contacts").some(x => lc(x.email) === email && x.id !== id)) return toast("Another contact already uses that email.", "bad");
     const custom = {}; String(f.get("custom") || "").split("\n").forEach(l => { const i = l.indexOf(":"); if (i > 0) custom[l.slice(0, i).trim()] = l.slice(i + 1).trim(); });
-    const d = { email, tags: tagsOf(f.get("tags")), custom }; for (const k of ["first_name", "last_name", "title", "company", "phone", "linkedin_url"]) d[k] = String(f.get(k) || "").trim();
+    const d = { email, tags: tagsOf(f.get("tags")), custom, smsOk: !!f.get("smsOk") }; for (const k of ["first_name", "last_name", "title", "company", "phone", "linkedin_url"]) d[k] = String(f.get(k) || "").trim();
     if (id) { await patch("contacts", id, d); showContact(id); }
     else { const nid = newId(); await put("contacts", nid, { ...d, status: "new", source: "Added by hand", createdAt: Date.now(), log: [{ t: Date.now(), k: "created", d: "Added by hand" }] }); showContact(nid); }
     toast("Saved.");
@@ -854,7 +896,7 @@ function contactForm(id) {
 function importForm() {
   const seqs = list("sequences").filter(s => s.status !== "archived");
   openModal(`<div class="modal-h"><h2>Import contacts</h2><button class="btn sm" data-close>Close</button></div>
-  <p class="small muted">Any CSV with an Email column works: Apollo, LinkedIn Sales Navigator, HubSpot or a spreadsheet. Extra columns (like <span class="mono">pain_point</span>) become merge fields you can use in emails.</p>
+  <p class="small muted">Any CSV with an Email column works: Apollo, LinkedIn Sales Navigator, HubSpot or a spreadsheet. Extra columns (like <span class="mono">pain_point</span>) become merge fields you can use in emails. Add an <span class="mono">SMS consent</span> column with “yes” for people who agreed to receive texts.</p>
   <form id="imf" class="fields"><label class="f">CSV file<input type="file" id="im-file" accept=".csv,text/csv"></label>
     <label class="f">Or paste CSV<textarea id="im-text" placeholder="email,first_name,company,pain_point&#10;jane@acme.com,Jane,Acme,slow follow-ups"></textarea></label>
     <div class="fields two"><label class="f">Tag everyone with<input type="text" id="im-tags" placeholder="e.g. q1-list"></label>
@@ -916,16 +958,21 @@ function stepForm(s, idx) {
       <label class="check"><input type="checkbox" name="thread" ${st.thread ? "checked" : ""}> Send as a reply in the same email thread</label>
       <label class="f">Subject (overrides the template)<input type="text" name="subject" value="${esc(st.subject || "")}"></label>
       <label class="f">Body (overrides the template)<textarea name="body">${esc(st.body || "")}</textarea></label></div>
+    <div class="fields" data-only="sms"><label class="f">Text message (merge fields work, e.g. {{first_name|there}})<textarea name="sms" id="sf-sms" style="min-height:90px;font-family:var(--body)">${esc(st.type === "sms" ? st.body || "" : "")}</textarea></label>
+      <div class="small muted" id="sf-count"></div>
+      <p class="small muted">Only sent to contacts marked as agreeing to texts. “Reply STOP to opt out.” is added automatically. Keep it short and personal.</p></div>
     <label class="f" data-only="manual">What to do<textarea name="instructions" style="min-height:70px;font-family:var(--body)">${esc(st.instructions || "")}</textarea></label>
     <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">Save step</button></div></form>`);
-  const sync = () => { const em = $("#sf-type").value === "email"; $("#modal-root [data-only=email]").hidden = !em; $("#modal-root [data-only=manual]").hidden = em; };
-  sync(); $("#sf-type").onchange = sync; $("#modal-root [data-close]").onclick = closeModal;
+  const sync = () => { const ty = $("#sf-type").value; $("#modal-root [data-only=email]").hidden = ty !== "email"; $("#modal-root [data-only=sms]").hidden = ty !== "sms"; $("#modal-root [data-only=manual]").hidden = ty === "email" || ty === "sms"; };
+  const count = () => { const i = smsInfo($("#sf-sms").value + SMS_STOP); $("#sf-count").textContent = `${i.n} characters with the opt-out line · ${i.parts} SMS`; };
+  sync(); count(); $("#sf-type").onchange = sync; $("#sf-sms").oninput = count; $("#modal-root [data-close]").onclick = closeModal;
   $("#sf").addEventListener("submit", async ev => {
     ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target);
     const d = { type: f.get("type"), delay: Math.max(0, parseInt(f.get("delay"), 10) || 0) };
     if (d.type === "email") { d.templateId = f.get("templateId") || ""; d.thread = !!f.get("thread"); d.subject = String(f.get("subject") || ""); d.body = String(f.get("body") || "");
       if (!d.templateId && !d.body.trim()) return toast("Pick a template or write a body.", "bad");
       if (!d.templateId && !d.subject.trim() && !(d.thread && idx !== 0 && (s.steps || []).length)) return toast("Add a subject, or send it as a reply in the same thread.", "bad"); }
+    else if (d.type === "sms") { d.body = String(f.get("sms") || "").trim(); if (!d.body) return toast("Write the text message.", "bad"); }
     else d.instructions = String(f.get("instructions") || "");
     const steps = [...(s.steps || [])]; if (idx != null) steps[idx] = d; else steps.push(d);
     await patch("sequences", s.id, { steps }); closeModal(); toast("Step saved.");
@@ -975,7 +1022,7 @@ function taskForm() {
   const cs = list("contacts").sort((a, b) => score(b) - score(a)).slice(0, 800);
   openModal(`<div class="modal-h"><h2>Add a task</h2><button class="btn sm" data-close>Close</button></div>
   <form id="kf" class="fields two"><label class="f" style="grid-column:1/-1">What<input type="text" name="title" required placeholder="e.g. Send proposal"></label>
-    <label class="f">Type<select name="type"><option value="todo">To-do</option><option value="call">Call</option><option value="linkedin">LinkedIn</option><option value="follow_up">Follow-up</option></select></label>
+    <label class="f">Type<select name="type"><option value="todo">To-do</option><option value="call">Call</option><option value="linkedin">LinkedIn</option><option value="sms">Text message</option><option value="follow_up">Follow-up</option></select></label>
     <label class="f">Due<input type="date" name="due" value="${new Date().toISOString().slice(0, 10)}"></label>
     <label class="f" style="grid-column:1/-1">Contact<select name="contactId"><option value="">—</option>${cs.map(c => `<option value="${c.id}">${esc(name(c))}</option>`).join("")}</select></label>
     <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Add task</button></div></form>`);
@@ -1024,6 +1071,10 @@ document.addEventListener("click", async ev => {
     case "personalize": return personalize(id);
     case "unpersonalize": delete S.overrides[id]; return render();
     case "new-task": return taskForm();
+    case "copy-sms": return copyText((S.data.tasks[id] || {}).notes || "", "Message");
+    case "copy-phone": { const t = S.data.tasks[id] || {}; return copyText(t.phone || (S.data.contacts[t.contactId] || {}).phone || "", "Number"); }
+    case "bulk-sms": { if (!needDb()) return; if (!(await confirmBox(`Mark ${S.sel.size} contacts as having agreed to receive texts? Only do this if they really did.`, "Yes, they agreed", false))) return;
+      await inBatches([...S.sel], cid => patch("contacts", cid, { smsOk: true })); toast("Updated."); return render(); }
     case "task-done": case "task-skip": { if (!needDb()) return; const t = S.data.tasks[id]; const o = $("#out-" + id); await completeTask(t, a === "task-done" ? "done" : "skipped", o ? o.value : ""); return toast(a === "task-done" ? "Task done." : "Task skipped."); }
     case "task-snooze": if (!needDb()) return; await patch("tasks", id, { due: startOfDay() + DAY + 9 * 36e5 }); return toast("Moved to tomorrow.");
     case "bulk-clear": S.sel.clear(); return render();
