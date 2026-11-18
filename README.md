@@ -31,6 +31,10 @@ SaaS fees and no per-seat pricing.
 
 ## Quick start
 
+**Inside Claude (no install):** the same system runs as a Claude page at
+https://claude.ai/artifact/7ybxVZNDvAN7C4oB3M4JYs (source: `artifact/outreach.html`). It saves your data with the
+page and sends through your connected Gmail.
+
 **No install (Windows):** download **Outreach.exe** from this repo's
 [Releases page](../../releases/latest) and double-click it. Python is bundled inside. Windows may warn
 "Windows protected your PC": click *More info → Run anyway*. Your data is kept in `%APPDATA%\Outreach`.

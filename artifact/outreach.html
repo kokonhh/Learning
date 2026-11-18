@@ -1,0 +1,1127 @@
+<title>Outreach</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a fixed rail of views on the left and one working canvas; on phones the rail becomes a scrolling tab strip. */
+:root {
+  --bg: #f3f6f5; --panel: #ffffff; --sunk: #eaefed; --ink: #14201c; --muted: #5a6964; --line: #d9e1de;
+  --accent: #0d6b5b; --accent-ink: #ffffff; --accent-soft: #dcefe9;
+  --good: #1d7a3a; --good-soft: #e1f2e5; --warn: #9a5800; --warn-soft: #fbeedb; --bad: #b3261e; --bad-soft: #fbe6e4;
+  --shadow: 0 1px 2px rgba(20, 32, 28, .06), 0 4px 16px rgba(20, 32, 28, .05);
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1513; --panel: #161e1b; --sunk: #1d2724; --ink: #e4ece9; --muted: #95a6a0; --line: #2a3632;
+    --accent: #4cc3a8; --accent-ink: #062019; --accent-soft: #163a32;
+    --good: #5fd08a; --good-soft: #17301f; --warn: #f0b660; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1b19;
+    --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1513; --panel: #161e1b; --sunk: #1d2724; --ink: #e4ece9; --muted: #95a6a0; --line: #2a3632;
+  --accent: #4cc3a8; --accent-ink: #062019; --accent-soft: #163a32;
+  --good: #5fd08a; --good-soft: #17301f; --warn: #f0b660; --warn-soft: #33270f; --bad: #ff8a80; --bad-soft: #3a1b19;
+  --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--body); }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h1 { font-size: 26px; line-height: 1.15; }
+h2 { font-size: 17px; }
+h3 { font-size: 14px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+.mono { font-family: var(--mono); }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 100%; }
+.rail { background: var(--panel); border-right: 1px solid var(--line); padding: 18px 10px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 2px; }
+.brand { font: 700 19px var(--display); padding: 2px 10px 16px; display: flex; align-items: center; gap: 8px; }
+.brand i { width: 10px; height: 10px; border-radius: 3px; background: var(--accent); display: inline-block; transform: rotate(45deg); }
+.rail a { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; color: var(--ink); text-decoration: none; font-weight: 500; }
+.rail a:hover { background: var(--sunk); }
+.rail a.on { background: var(--accent-soft); color: var(--accent); }
+.rail .count { font: 600 11px var(--mono); background: var(--accent); color: var(--accent-ink); border-radius: 9px; padding: 0 7px; }
+.rail .foot { margin-top: auto; padding: 10px; font-size: 12px; color: var(--muted); display: grid; gap: 4px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-right: 6px; }
+.dot.ok { background: var(--good); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+
+main { min-width: 0; padding-block: 26px 70px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.head p { margin: 4px 0 0; color: var(--muted); max-width: 64ch; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.stack { display: grid; gap: 16px; }
+.grid { display: grid; gap: 16px; }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.side { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; box-shadow: var(--shadow); min-width: 0; }
+.card > h2 { margin-bottom: 10px; }
+.tile .label { font: 500 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.tile .value { font: 700 28px var(--display); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tile .sub { font-size: 12px; color: var(--muted); }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 500 13px var(--body); padding: 7px 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; white-space: nowrap; text-decoration: none; }
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); }
+.btn.sm { padding: 3px 9px; font-size: 12px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer; text-align: left; }
+.linkish:hover { text-decoration: underline; }
+
+label.f { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); }
+input[type=text], input[type=email], input[type=number], input[type=search], input[type=url], input[type=date], select, textarea {
+  width: 100%; font: 14px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 7px; padding: 7px 9px; }
+textarea { min-height: 120px; resize: vertical; font: 13px/1.55 var(--mono); }
+.row input, .row select { width: auto; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--ink); }
+.check input { width: auto; }
+.fields { display: grid; gap: 12px; }
+.fields.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font: 500 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover td { background: var(--sunk); }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+
+.pill { display: inline-block; font: 500 11px var(--mono); padding: 1px 8px; border-radius: 10px; background: var(--sunk); color: var(--muted); white-space: nowrap; }
+.pill.new { background: var(--sunk); }
+.pill.contacted, .pill.active, .pill.draft, .pill.open { background: var(--accent-soft); color: var(--accent); }
+.pill.engaged, .pill.paused, .pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.replied, .pill.meeting, .pill.qualified, .pill.customer, .pill.completed, .pill.won, .pill.sent, .pill.done { background: var(--good-soft); color: var(--good); }
+.pill.unsubscribed, .pill.bounced, .pill.lost, .pill.stopped, .pill.bad { background: var(--bad-soft); color: var(--bad); }
+.tag { display: inline-block; font: 11px var(--mono); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin: 1px 3px 1px 0; color: var(--muted); }
+.score { display: inline-grid; place-items: center; min-width: 32px; height: 22px; border-radius: 6px; font: 600 12px var(--mono); background: var(--sunk); color: var(--muted); }
+.score.hot { background: var(--good-soft); color: var(--good); }
+.score.warm { background: var(--warn-soft); color: var(--warn); }
+
+.banner { border-radius: 9px; padding: 11px 14px; background: var(--accent-soft); color: var(--ink); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.banner.warn { background: var(--warn-soft); }
+.banner.bad { background: var(--bad-soft); }
+.empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.timeline li { padding: 6px 0 6px 16px; border-left: 2px solid var(--line); position: relative; }
+.timeline li::before { content: ""; position: absolute; left: -5px; top: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.timeline li.replied::before, .timeline li.meeting::before { background: var(--good); }
+.timeline li.email::before { background: var(--accent); }
+.timeline li.unsubscribed::before, .timeline li.bounced::before { background: var(--bad); }
+
+.steps { display: grid; gap: 8px; }
+.step { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+.step .day { text-align: center; font: 500 10px var(--mono); color: var(--muted); text-transform: uppercase; }
+.step .day b { display: block; font: 700 22px var(--display); color: var(--ink); text-transform: none; }
+.kind { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+
+.board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.col { background: var(--sunk); border-radius: 10px; padding: 10px; min-height: 260px; display: grid; align-content: start; gap: 8px; }
+.col.over { outline: 2px dashed var(--accent); }
+.col-h { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.deal { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; cursor: grab; display: grid; gap: 2px; text-align: left; font: inherit; color: inherit; width: 100%; }
+.deal b { font-weight: 600; }
+
+.bars { display: grid; gap: 7px; }
+.bar { display: grid; grid-template-columns: 96px minmax(0, 1fr) 44px; gap: 8px; align-items: center; font-size: 12px; }
+.bar .track { height: 10px; border-radius: 5px; background: var(--sunk); overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); border-radius: 5px; }
+
+.preview { white-space: pre-wrap; font: 13px/1.55 var(--body); background: var(--sunk); border-radius: 8px; padding: 12px; overflow-wrap: anywhere; }
+.preview .subj { font-weight: 600; margin-bottom: 8px; white-space: normal; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips button { font: 11px var(--mono); border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 4px; padding: 1px 6px; cursor: pointer; }
+
+.overlay { position: fixed; inset: 0; background: rgba(8, 14, 12, .45); display: grid; place-items: start center; overflow-y: auto; padding: max(24px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) 40px max(12px, env(safe-area-inset-left, 0px)); z-index: 50; }
+.modal { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: min(760px, 100%); padding: 20px; display: grid; gap: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.modal.wide { width: min(980px, 100%); }
+.modal-h { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+#toast { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 8px; z-index: 60; max-width: min(420px, calc(100% - 32px)); }
+.toast { background: var(--ink); color: var(--bg); padding: 10px 14px; border-radius: 8px; font-size: 13px; box-shadow: var(--shadow); }
+.toast.bad { background: var(--bad); color: #fff; }
+.progress { font: 12px var(--mono); color: var(--muted); }
+
+@media (max-width: 1000px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .side { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .rail { position: sticky; top: env(safe-area-inset-top, 0px); height: auto; align-items: center; flex-direction: row; overflow-x: auto; padding: 8px max(12px, env(safe-area-inset-left, 0px)); border-right: 0; border-bottom: 1px solid var(--line); z-index: 5; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
+  .brand, .rail .foot { display: none; }
+  .rail a { white-space: nowrap; }
+  main { padding-block: 18px 60px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .g4, .g2, .fields.two { grid-template-columns: minmax(0, 1fr); }
+  .step { grid-template-columns: 44px minmax(0, 1fr); }
+  .step > :last-child { grid-column: 1 / -1; }
+}
+@media (prefers-reduced-motion: no-preference) { .modal { animation: pop .14s ease-out; } @keyframes pop { from { transform: translateY(6px); opacity: .6; } } }
+</style>
+
+<div class="app">
+  <nav class="rail" id="rail" aria-label="Sections"></nav>
+  <main id="main"><div class="empty">Loading your outreach workspace…</div></main>
+</div>
+<div id="modal-root"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+const DAY = 864e5;
+const COLS = ["contacts", "templates", "sequences", "enrollments", "tasks", "deals", "emails"];
+const STATUSES = ["new", "contacted", "engaged", "replied", "meeting", "qualified", "customer", "lost", "unsubscribed", "bounced"];
+const TERMINAL = ["unsubscribed", "bounced"];
+const STEP_TYPES = { email: "Email", linkedin: "LinkedIn", call: "Phone call", task: "Manual task" };
+const PROB = { lead: 10, qualified: 20, meeting: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
+const DEFAULTS = { senderName: "", company: "", address: "", signature: "Best,\n{{sender_name}}\n{{sender_company}}",
+  dailyLimit: 30, mode: "draft", stages: ["lead", "qualified", "meeting", "proposal", "negotiation", "won", "lost"] };
+const VIEWS = [["dashboard", "Dashboard"], ["outbox", "Outbox"], ["tasks", "Tasks"], ["contacts", "Contacts"],
+  ["sequences", "Sequences"], ["templates", "Templates"], ["pipeline", "Pipeline"], ["setup", "Setup"]];
+
+let db = null, mcp = null, sample = null, user = null;
+const S = {
+  data: Object.fromEntries(COLS.map(c => [c, {}])), settings: { ...DEFAULTS }, loaded: new Set(),
+  dbState: "loading", view: "dashboard", seqId: null, f: { q: "", status: "", tag: "" }, sel: new Set(),
+  gmail: "checking", sampleOK: false, skip: new Set(), overrides: {}, busy: "", dirty: false, canWrite: true,
+};
+
+// ------------------------------------------------------------------ helpers
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const list = col => Object.values(S.data[col]);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const money = v => "$" + Math.round(+v || 0).toLocaleString();
+const lc = s => String(s || "").trim().toLowerCase();
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+function decode(s) { const t = document.createElement("textarea"); t.innerHTML = s || ""; return t.value; }
+function ago(ms) {
+  if (!ms) return "—";
+  const d = Date.now() - ms, a = Math.abs(d), fut = d < 0;
+  const u = a >= DAY ? Math.round(a / DAY) + "d" : a >= 36e5 ? Math.round(a / 36e5) + "h" : a >= 6e4 ? Math.round(a / 6e4) + "m" : "";
+  if (!u) return "just now";
+  return fut ? "in " + u : u + " ago";
+}
+const name = c => c ? ([c.first_name, c.last_name].filter(Boolean).join(" ") || c.email) : "Deleted contact";
+const pill = (s, cls) => `<span class="pill ${esc(cls || s)}">${esc(s)}</span>`;
+const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+function score(c) {
+  if (["unsubscribed", "bounced", "lost"].includes(c.status)) return 0;
+  let s = 0; const t = lc(c.title);
+  for (const [re, p] of [[/founder|owner|\bceo\b|\bcto\b|\bcfo\b|\bcoo\b|\bcmo\b|\bcro\b|chief|president/, 30],
+    [/\bvp\b|vice president|head of|director/, 22], [/manager|lead|principal/, 14], [/senior|sr\./, 8]]) if (re.test(t)) { s += p; break; }
+  for (const f of ["phone", "linkedin_url", "title", "company"]) if (c[f]) s += 3;
+  s += { engaged: 8, replied: 25, meeting: 35, qualified: 40, customer: 40 }[c.status] || 0;
+  return Math.min(100, s);
+}
+const scoreChip = c => { const s = score(c); return `<span class="score ${s >= 50 ? "hot" : s >= 30 ? "warm" : ""}" title="Lead score">${s}</span>`; };
+
+function toast(msg, kind) {
+  const el = document.createElement("div"); el.className = "toast " + (kind || ""); el.textContent = msg;
+  const box = $("#toast"); box.appendChild(el); while (box.children.length > 3) box.firstChild.remove(); setTimeout(() => el.remove(), kind === "bad" ? 9000 : 4500);
+}
+
+// ------------------------------------------------------------------ data writes (local mirror keeps sequential edits consistent)
+function needDb() { if (!db) { toast("Saving needs this page open inside Claude.", "bad"); return false; } if (!S.canWrite) { toast("You can view this workspace but not change it.", "bad"); return false; } return true; }
+function dbErr(e) {
+  const m = { quota_exceeded: "Storage is full — delete old contacts or emails, then try again.", resource_exhausted: "Too many changes at once — wait a few seconds and try again.",
+    invalid_argument: "That change was refused. You may only have view access.", revoked: "Access to this workspace was removed." };
+  return m[e && e.code] || "Couldn't save just now. Try again in a moment.";
+}
+async function put(col, id, data) { S.data[col][id] = { id, ...data }; try { await db.collection(col).doc(id).set(data); } catch (e) { toast(dbErr(e), "bad"); throw e; } return id; }
+async function patch(col, id, data) { if (S.data[col][id]) Object.assign(S.data[col][id], data); try { await db.collection(col).doc(id).update(data); } catch (e) { toast(dbErr(e), "bad"); throw e; } }
+async function remove(col, id) { delete S.data[col][id]; try { await db.collection(col).doc(id).delete(); } catch (e) { toast(dbErr(e), "bad"); throw e; } }
+const strip = o => { const { id, ...rest } = o; return rest; };
+async function logC(cid, k, d, extra = {}) {
+  const c = S.data.contacts[cid]; if (!c) return;
+  const log = [{ t: Date.now(), k, d: String(d || "").slice(0, 500) }, ...(c.log || [])].slice(0, 60);
+  await patch("contacts", cid, { log, ...extra });
+}
+async function inBatches(items, fn, size = 8) { for (let i = 0; i < items.length; i += size) await Promise.all(items.slice(i, i + size).map(fn)); }
+
+// ------------------------------------------------------------------ templating
+const MERGE = /\{\{\s*([a-zA-Z0-9_.]+)\s*(?:\|([^}]*))?\}\}/g, SPIN = /\[\[([^\[\]]+?)\]\]/g;
+const FIELDS = ["first_name", "last_name", "full_name", "email", "title", "company", "phone", "sender_name", "sender_company"];
+function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; }
+function ctxFor(c) {
+  const st = S.settings, ctx = {
+    first_name: c.first_name || "", last_name: c.last_name || "", full_name: [c.first_name, c.last_name].filter(Boolean).join(" "),
+    email: c.email || "", title: c.title || "", company: c.company || "", phone: c.phone || "", linkedin_url: c.linkedin_url || "",
+    sender_name: st.senderName || "", sender_company: st.company || "" };
+  for (const [k, v] of Object.entries(c.custom || {})) { ctx["custom." + k] = String(v); if (!(k in ctx)) ctx[k] = String(v); }
+  return ctx;
+}
+function fill(text, ctx, seed) {
+  const missing = [];
+  const spun = String(text || "").replace(SPIN, (m, o) => { const opts = o.split("|"); return opts[hash(seed + m) % opts.length]; });
+  const out = spun.replace(MERGE, (m, n, fb) => { const v = ctx[n]; if (v) return v; if (fb !== undefined) return fb.trim(); missing.push(n); return ""; });
+  return { out, missing };
+}
+function footer() {
+  const st = S.settings, who = [st.company, st.address].filter(Boolean).join(" · ");
+  return "\n\n--\n" + (who ? who + "\n" : "") + 'Not interested? Reply "unsubscribe" and I won\'t email you again.';
+}
+function compose(c, step, e, bodyOverride) {
+  const tpl = step.templateId ? S.data.templates[step.templateId] : null;
+  const ctx = ctxFor(c), seed = c.id;
+  const threaded = !!(step.thread && e && e.threadSubject);
+  let subject, m1 = [];
+  if (threaded) subject = /^re:/i.test(e.threadSubject) ? e.threadSubject : "Re: " + e.threadSubject;
+  else ({ out: subject, missing: m1 } = fill(step.subject || (tpl && tpl.subject) || "", ctx, seed));
+  const b = bodyOverride != null ? { out: bodyOverride, missing: [] } : fill(step.body || (tpl && tpl.body) || "", ctx, seed);
+  const sig = fill(S.settings.signature || "", ctx, seed).out.trim();
+  const main = b.out.trim();
+  const missing = [...new Set([...m1, ...b.missing])];
+  const problem = missing.length ? "Missing " + missing.join(", ") : !subject.trim() ? "No subject" : !main ? "No body" : "";
+  return { subject: subject.trim(), main, body: main + (sig ? "\n\n" + sig : "") + footer(), missing, problem, threaded };
+}
+
+// ------------------------------------------------------------------ engine
+function activeSeq(e) { const s = S.data.sequences[e.seqId]; return s && s.status === "active" ? s : null; }
+function dueItems(now = Date.now()) {
+  const items = [];
+  for (const e of list("enrollments")) {
+    if (e.status !== "active" || e.nextRun == null || e.nextRun > now) continue;
+    const seq = activeSeq(e); if (!seq) continue;
+    const c = S.data.contacts[e.contactId];
+    const step = (seq.steps || [])[e.step];
+    if (!c) { items.push({ kind: "orphan", e, seq }); continue; }
+    if (!step) { items.push({ kind: "finish", e, seq, c }); continue; }
+    if (TERMINAL.includes(c.status)) { items.push({ kind: "stop", e, seq, c }); continue; }
+    if (step.type === "email") items.push({ kind: "email", e, seq, c, step, m: compose(c, step, e, S.overrides[e.id]) });
+    else items.push({ kind: "task", e, seq, c, step });
+  }
+  return items.sort((a, b) => a.e.nextRun - b.e.nextRun);
+}
+const sentToday = () => list("emails").filter(m => m.at >= startOfDay()).length;
+function nextFor(e, seq, now) {
+  const n = e.step + 1, st = (seq.steps || [])[n];
+  return st ? { step: n, nextRun: now + (st.delay || 0) * DAY } : { step: n, nextRun: null, status: "completed", finishedAt: now };
+}
+async function enroll(seqId, ids) {
+  const seq = S.data.sequences[seqId]; if (!seq || !(seq.steps || []).length) { toast("Add at least one step to that sequence first.", "bad"); return null; }
+  const have = new Set(list("enrollments").filter(e => e.seqId === seqId).map(e => e.contactId));
+  const now = Date.now(), res = { added: 0, skipped: 0 }, todo = [];
+  for (const id of ids) {
+    const c = S.data.contacts[id];
+    if (!c || TERMINAL.includes(c.status) || have.has(id)) { res.skipped++; continue; }
+    have.add(id); todo.push(c);
+  }
+  await inBatches(todo, async c => {
+    await put("enrollments", newId(), { seqId, contactId: c.id, step: 0, status: "active", nextRun: now + (seq.steps[0].delay || 0) * DAY, enrolledAt: now });
+    await logC(c.id, "enrolled", "Added to “" + seq.name + "”");
+    res.added++;
+  });
+  return res;
+}
+async function closeTasksFor(enrollIds, why) {
+  for (const t of list("tasks")) if (t.status === "open" && enrollIds.includes(t.enrollId)) await patch("tasks", t.id, { status: "skipped", outcome: why, doneAt: Date.now() });
+}
+async function stopFor(cid, status, onlyStopOnReply) {
+  const hit = list("enrollments").filter(e => e.contactId === cid && ["active", "paused"].includes(e.status) &&
+    (!onlyStopOnReply || (S.data.sequences[e.seqId] || {}).stopOnReply !== false));
+  for (const e of hit) await patch("enrollments", e.id, { status, nextRun: null, finishedAt: Date.now() });
+  await closeTasksFor(hit.map(e => e.id), "sequence stopped (" + status + ")");
+  return hit.length;
+}
+async function markReplied(cid, detail, at) {
+  const c = S.data.contacts[cid]; if (!c) return;
+  const extra = { lastReplyAt: at || Date.now() };
+  if (["new", "contacted", "engaged"].includes(c.status)) extra.status = "replied";
+  await logC(cid, "replied", detail || "Replied", extra);
+  await stopFor(cid, "replied", true);
+  await put("tasks", newId(), { contactId: cid, type: "follow_up", title: "Respond to " + name(c), status: "open", due: Date.now(), createdAt: Date.now() });
+}
+async function optOut(cid, kind) {
+  const status = kind === "bounced" ? "bounced" : "unsubscribed";
+  await logC(cid, status, kind === "bounced" ? "Email bounced" : "Asked not to be contacted", { status });
+  await stopFor(cid, status, false);
+}
+async function meeting(cid, detail) {
+  const c = S.data.contacts[cid]; if (!c) return;
+  await logC(cid, "meeting", detail || "Meeting booked", ["qualified", "customer"].includes(c.status) ? {} : { status: "meeting" });
+  await stopFor(cid, "replied", true);
+}
+async function completeTask(t, status, outcome) {
+  await patch("tasks", t.id, { status, outcome: outcome || "", doneAt: Date.now() });
+  const c = S.data.contacts[t.contactId];
+  if (c) {
+    const extra = {};
+    if (status === "done" && ["call", "linkedin"].includes(t.type)) { extra.lastContacted = Date.now(); if (c.status === "new") extra.status = "contacted"; }
+    await logC(c.id, t.type === "call" ? "call" : t.type === "linkedin" ? "linkedin" : "task", t.title + " — " + status + (outcome ? ": " + outcome : ""), extra);
+    if (outcome === "meeting booked") await meeting(c.id, "Meeting booked (from task)");
+  }
+  const e = t.enrollId && S.data.enrollments[t.enrollId];
+  if (e && e.status === "active" && e.step === t.step) { const seq = S.data.sequences[e.seqId]; if (seq) await patch("enrollments", e.id, nextFor(e, seq, Date.now())); }
+}
+
+// ------------------------------------------------------------------ Gmail
+function gmailMsg(e) {
+  const code = e && e.code;
+  return ({ server_not_connected: "Gmail isn't connected. Add it in claude.ai Settings → Connectors, then try again.",
+    needs_reauth: "Gmail needs to be reconnected in claude.ai Settings → Connectors.",
+    not_in_manifest: "Gmail isn't allowed for this page. Use the page's Permissions menu to allow it.",
+    approval_required: "Gmail needs your approval. Click the button again and choose Allow.",
+    blocked_by_policy: "Your organization blocks this Gmail action.",
+    selection_required: "You have more than one Gmail connector — pick one when Claude asks.",
+    server_unavailable: "Gmail didn't answer. Check Gmail before retrying so nothing goes out twice.",
+    tool_error: "Gmail refused it: " + ((e && e.message) || "unknown error") })[code] || ("Gmail error: " + ((e && e.message) || code || "unknown"));
+}
+async function gmail(tool, input) { if (!mcp) throw { code: "server_not_connected" }; const r = await mcp.callTool("Gmail", tool, input); return r.payload || {}; }
+
+async function runOutbox() {
+  if (!needDb() || S.busy) return;
+  const items = dueItems().filter(i => !S.skip.has(i.e.id));
+  let remaining = Math.max(0, (+S.settings.dailyLimit || 0) - sentToday());
+  const st = { emails: 0, tasks: 0, done: 0, held: 0 };
+  const mode = S.settings.mode === "send" ? "send" : "draft";
+  try {
+    for (const it of items) {
+      const now = Date.now();
+      S.busy = `Working… ${st.emails} email${st.emails === 1 ? "" : "s"}, ${st.tasks} task${st.tasks === 1 ? "" : "s"}`; render();
+      if (it.kind === "orphan") { await patch("enrollments", it.e.id, { status: "stopped", nextRun: null }); continue; }
+      if (it.kind === "finish") { await patch("enrollments", it.e.id, { status: "completed", nextRun: null, finishedAt: now }); st.done++; continue; }
+      if (it.kind === "stop") { await patch("enrollments", it.e.id, { status: "stopped", nextRun: null, finishedAt: now }); continue; }
+      if (it.kind === "task") {
+        await put("tasks", newId(), { contactId: it.c.id, enrollId: it.e.id, step: it.e.step, type: it.step.type === "task" ? "todo" : it.step.type,
+          title: STEP_TYPES[it.step.type] + " — " + name(it.c), notes: it.step.instructions || "", status: "open", due: now, createdAt: now });
+        await patch("enrollments", it.e.id, { nextRun: null });
+        st.tasks++; continue;
+      }
+      if (it.m.problem || S.gmail !== "ok") { st.held++; continue; }
+      if (remaining <= 0) { st.held++; continue; }
+      const input = { to: [it.c.email], subject: it.m.subject, body: it.m.body };
+      if (mode === "send" && it.m.threaded && it.e.threadId) input.replyThreadId = it.e.threadId;
+      const res = await gmail(mode === "send" ? "send_message" : "create_draft", input);
+      await put("emails", newId(), { contactId: it.c.id, enrollId: it.e.id, seqId: it.seq.id, step: it.e.step, subject: it.m.subject, body: it.m.body,
+        at: Date.now(), mode, gmailId: res.id || "", threadId: res.threadId || "", url: res.viewUrl || "" });
+      const ep = nextFor(it.e, it.seq, Date.now());
+      if (!it.e.threadSubject) { ep.threadSubject = it.m.subject; ep.threadId = res.threadId || ""; }
+      await patch("enrollments", it.e.id, ep);
+      await logC(it.c.id, "email", (mode === "send" ? "Sent: " : "Drafted in Gmail: ") + it.m.subject,
+        { lastContacted: Date.now(), ...(it.c.status === "new" ? { status: "contacted" } : {}) });
+      delete S.overrides[it.e.id];
+      st.emails++; remaining--;
+    }
+    toast(`Done: ${st.emails} email${st.emails === 1 ? "" : "s"} ${mode === "send" ? "sent" : "drafted in Gmail"}, ${st.tasks} task${st.tasks === 1 ? "" : "s"} created` + (st.held ? `, ${st.held} held back` : "") + ".");
+  } catch (e) {
+    toast(e && e.code ? gmailMsg(e) : dbErr(e), "bad");
+  } finally { S.busy = ""; render(); }
+}
+
+const AUTO_RE = /out of (the )?office|automatic reply|auto[- ]?reply|autoreply|away from (the )?office|on vacation/i;
+const OPTOUT_RE = /\bunsubscribe\b|remove me|opt[- ]?out|stop emailing|take me off/i;
+async function checkInbox() {
+  if (!needDb() || S.busy) return;
+  const watch = list("contacts").filter(c => c.lastContacted && !TERMINAL.includes(c.status) && EMAIL_RE.test(c.email || ""));
+  const byEmail = Object.fromEntries(watch.map(c => [lc(c.email), c]));
+  let replies = 0, outs = 0, bounces = 0;
+  try {
+    for (let i = 0; i < watch.length; i += 12) {
+      S.busy = `Checking Gmail… ${Math.min(i + 12, watch.length)} of ${watch.length}`; render();
+      const q = "from:(" + watch.slice(i, i + 12).map(c => c.email).join(" OR ") + ") newer_than:60d -in:sent";
+      const p = await gmail("search_threads", { query: q, pageSize: 50, view: "THREAD_VIEW_MINIMAL" });
+      for (const th of p.threads || []) for (const m of th.messages || []) {
+        const c = byEmail[lc(m.sender)]; if (!c) continue;
+        const t = Date.parse(m.date) || 0, cur = S.data.contacts[c.id];
+        if (!cur || t <= (cur.lastContacted || 0) || t <= (cur.lastReplyAt || 0) || TERMINAL.includes(cur.status)) continue;
+        const subj = decode(m.subject), snip = decode(m.snippet);
+        if (AUTO_RE.test(subj) || AUTO_RE.test(snip.slice(0, 80))) { await logC(c.id, "auto", "Auto-reply: " + subj, { lastReplyAt: t }); continue; }
+        if (OPTOUT_RE.test(snip.slice(0, 200))) { await optOut(c.id, "unsubscribed"); outs++; continue; }
+        await markReplied(c.id, "Replied: " + (snip.slice(0, 160) || subj), t); replies++;
+      }
+    }
+    if (watch.length) {
+      const p = await gmail("search_threads", { query: "from:(mailer-daemon OR postmaster) newer_than:30d", pageSize: 50, view: "THREAD_VIEW_MINIMAL" });
+      for (const th of p.threads || []) for (const m of th.messages || []) {
+        const text = lc(decode((m.subject || "") + " " + (m.snippet || "")));
+        for (const c of watch) { const cur = S.data.contacts[c.id]; if (cur && !TERMINAL.includes(cur.status) && text.includes(lc(c.email))) { await optOut(c.id, "bounced"); bounces++; } }
+      }
+    }
+    S.settings.lastInboxCheck = Date.now();
+    await db.doc("settings/main").set(S.settings).catch(() => {});
+    toast(watch.length ? `Gmail checked: ${replies} new repl${replies === 1 ? "y" : "ies"}, ${outs} opt-out${outs === 1 ? "" : "s"}, ${bounces} bounce${bounces === 1 ? "" : "s"}.` : "Nobody has been emailed yet, so there's nothing to check.");
+  } catch (e) { toast(e && e.code ? gmailMsg(e) : dbErr(e), "bad"); }
+  finally { S.busy = ""; render(); }
+}
+
+// ------------------------------------------------------------------ CSV import
+const ALIASES = {
+  email: ["email", "email address", "e-mail", "work email"], first_name: ["first name", "firstname", "given name", "first"],
+  last_name: ["last name", "lastname", "surname", "family name", "last"], full_name: ["name", "full name", "contact name"],
+  title: ["title", "job title", "position", "role"], phone: ["phone", "phone number", "mobile", "telephone", "direct phone"],
+  linkedin_url: ["linkedin", "linkedin url", "linkedin profile", "person linkedin url"], company: ["company", "company name", "organization", "organisation", "account", "account name"],
+  tags: ["tags", "tag", "labels", "list"], source: ["source", "lead source"] };
+const normH = h => lc(h).replace(/_/g, " ").replace(/\s+/g, " ");
+function mapHeader(h) { const n = normH(h); for (const [f, names] of Object.entries(ALIASES)) if (names.includes(n) || n === f.replace(/_/g, " ")) return f; return "custom:" + h.trim(); }
+function parseCSV(text) {
+  text = text.replace(/^﻿/, ""); const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(f); f = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += ch;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim() !== ""));
+}
+const tagsOf = s => [...new Set(String(s || "").split(/[,;|]/).map(t => lc(t)).filter(Boolean))].sort();
+async function importCSV(text, extraTags, seqId) {
+  const rows = parseCSV(text); if (rows.length < 2) return { error: "Paste or upload a CSV with a header row and at least one contact." };
+  const map = rows[0].map(mapHeader);
+  if (!map.includes("email")) return { error: "No email column found. Add a header named “Email”." };
+  const byEmail = Object.fromEntries(list("contacts").map(c => [lc(c.email), c]));
+  const res = { created: 0, updated: 0, skipped: 0, ids: [] }, ops = [];
+  for (const r of rows.slice(1)) {
+    const rec = {}, custom = {};
+    map.forEach((f, i) => { const v = (r[i] || "").trim(); if (!v) return; if (f.startsWith("custom:")) custom[f.slice(7)] = v; else rec[f] = v; });
+    const email = lc(rec.email);
+    if (!EMAIL_RE.test(email)) { res.skipped++; continue; }
+    if (!rec.first_name && rec.full_name) { const p = rec.full_name.split(/\s+/); rec.first_name = p[0]; rec.last_name = rec.last_name || p.slice(1).join(" "); }
+    const tags = tagsOf([rec.tags, extraTags].filter(Boolean).join(","));
+    const ex = byEmail[email];
+    if (ex) {
+      const upd = { tags: tagsOf([...(ex.tags || []), ...tags].join(",")), custom: { ...(ex.custom || {}), ...custom } };
+      for (const k of ["first_name", "last_name", "title", "phone", "linkedin_url", "company"]) if (rec[k]) upd[k] = rec[k];
+      ops.push(() => patch("contacts", ex.id, upd)); res.updated++; res.ids.push(ex.id);
+    } else {
+      const id = newId(), doc = { email, first_name: rec.first_name || "", last_name: rec.last_name || "", title: rec.title || "", phone: rec.phone || "",
+        linkedin_url: rec.linkedin_url || "", company: rec.company || "", tags, custom, status: "new", source: rec.source || "CSV import",
+        createdAt: Date.now(), log: [{ t: Date.now(), k: "created", d: "Imported from CSV" }] };
+      byEmail[email] = { id, ...doc };
+      ops.push(() => put("contacts", id, doc)); res.created++; res.ids.push(id);
+    }
+  }
+  for (let i = 0; i < ops.length; i += 8) { S.busy = `Importing… ${Math.min(i + 8, ops.length)} of ${ops.length}`; render(); await Promise.all(ops.slice(i, i + 8).map(f => f())); }
+  if (seqId && res.ids.length) res.enrolled = await enroll(seqId, res.ids);
+  S.busy = ""; return res;
+}
+
+// ------------------------------------------------------------------ modal + confirm
+let modalClose = null;
+function openModal(html, { wide, onClose } = {}) {
+  closeModal();
+  $("#modal-root").innerHTML = `<div class="overlay" data-overlay><div class="modal ${wide ? "wide" : ""}" role="dialog" aria-modal="true">${html}</div></div>`;
+  modalClose = onClose || null;
+  const first = $("#modal-root input, #modal-root textarea, #modal-root select, #modal-root .btn"); if (first) first.focus();
+  return $("#modal-root .modal");
+}
+function closeModal() { $("#modal-root").innerHTML = ""; const f = modalClose; modalClose = null; if (f) f(); }
+function confirmBox(msg, label = "Confirm", danger = true) {
+  return new Promise(res => {
+    openModal(`<div class="modal-h"><h2>Are you sure?</h2></div><p>${esc(msg)}</p>
+      <div class="row" style="justify-content:flex-end"><button class="btn" data-x="no">Cancel</button><button class="btn ${danger ? "danger" : "primary"}" data-x="yes">${esc(label)}</button></div>`,
+      { onClose: () => res(false) });
+    $("#modal-root .modal").addEventListener("click", ev => { const b = ev.target.closest("[data-x]"); if (!b) return; modalClose = null; closeModal(); res(b.dataset.x === "yes"); });
+  });
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#modal-root").innerHTML) closeModal(); });
+document.addEventListener("click", e => { if (e.target.matches("[data-overlay]")) closeModal(); });
+
+// ------------------------------------------------------------------ rendering
+let rafId = 0;
+function schedule() { if (!rafId) rafId = requestAnimationFrame(() => { rafId = 0; render(); }); }
+function render() {
+  const act = document.activeElement;
+  if (act && act.closest && act.closest("#main [data-form]")) { S.dirty = true; renderRail(); return; }
+  S.dirty = false;
+  const keep = act && act.id && $("#main").contains(act) ? { id: act.id, s: act.selectionStart, e: act.selectionEnd } : null;
+  renderRail();
+  const fn = { dashboard: vDashboard, outbox: vOutbox, tasks: vTasks, contacts: vContacts, sequences: vSequences, templates: vTemplates, pipeline: vPipeline, setup: vSetup }[S.view] || vDashboard;
+  $("#main").innerHTML = statusBanner() + fn();
+  if (keep) { const el = document.getElementById(keep.id); if (el) { el.focus(); try { el.setSelectionRange(keep.s, keep.e); } catch (_) {} } }
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (S.dirty && !(document.activeElement && document.activeElement.closest && document.activeElement.closest("#main [data-form]"))) render(); }, 0));
+
+function renderRail() {
+  const tasksDue = list("tasks").filter(t => t.status === "open" && t.due <= Date.now()).length;
+  const outbox = S.dbState === "ready" ? dueItems().length : 0;
+  const g = S.gmail === "ok" ? ["ok", "Gmail available"] : S.gmail === "checking" ? ["warn", "Checking Gmail…"] : ["bad", "Gmail not available here"];
+  $("#rail").innerHTML = `<div class="brand"><i></i>Outreach</div>` + VIEWS.map(([k, label]) => {
+    const n = k === "tasks" ? tasksDue : k === "outbox" ? outbox : 0;
+    return `<a href="#${k}" class="${S.view === k ? "on" : ""}">${label}${n ? `<span class="count">${n}</span>` : ""}</a>`;
+  }).join("") + `<div class="foot"><span><span class="dot ${g[0]}"></span>${g[1]}</span><span>Mode: <b>${S.settings.mode === "send" ? "send from Gmail" : "Gmail drafts"}</b></span></div>`;
+}
+function statusBanner() {
+  let b = "";
+  if (S.dbState === "none") b += `<div class="banner bad" style="margin-bottom:16px">This copy of the page can't save data. Open it inside Claude to use your workspace.</div>`;
+  else if (S.dbState === "slow") b += `<div class="banner warn" style="margin-bottom:16px">Your saved data hasn't loaded yet. Check your connection; this page keeps trying.</div>`;
+  else if (S.dbState === "error") b += `<div class="banner bad" style="margin-bottom:16px">Your saved data can't be reached right now. Reload the page to try again.</div>`;
+  if (S.busy) b += `<div class="banner" style="margin-bottom:16px"><span class="progress">${esc(S.busy)}</span></div>`;
+  return b;
+}
+function loadingOr(html) { return S.dbState === "loading" ? `<div class="empty">Loading your saved data…</div>` : html; }
+
+// ---------- Dashboard
+function vDashboard() {
+  const now = Date.now(), m30 = now - 30 * DAY;
+  const cs = list("contacts"), em = list("emails").filter(m => m.at >= m30);
+  const emailed = new Set(em.map(m => m.contactId)), replied = cs.filter(c => c.lastReplyAt >= m30 && emailed.has(c.id)).length;
+  const deals = list("deals"), open = deals.filter(d => !["won", "lost"].includes(d.stage));
+  const weighted = open.reduce((a, d) => a + (+d.value || 0) * ((d.probability ?? PROB[d.stage] ?? 0) / 100), 0);
+  const items = dueItems(), emailsDue = items.filter(i => i.kind === "email").length, tasksDue = list("tasks").filter(t => t.status === "open" && t.due <= now).length;
+  const examples = cs.some(c => (c.tags || []).includes("example"));
+  const setupNeeded = !S.settings.senderName || !S.settings.address;
+  const hot = cs.filter(c => !TERMINAL.includes(c.status)).sort((a, b) => score(b) - score(a)).slice(0, 7);
+  const feed = cs.flatMap(c => (c.log || []).filter(l => ["replied", "meeting", "email", "unsubscribed", "bounced", "call"].includes(l.k)).map(l => ({ ...l, c }))).sort((a, b) => b.t - a.t).slice(0, 10);
+  const byStatus = STATUSES.map(s => [s, cs.filter(c => c.status === s).length]).filter(([, n]) => n);
+  const maxS = Math.max(1, ...byStatus.map(([, n]) => n));
+  return loadingOr(`
+  <div class="head"><div><h1>Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}${S.settings.senderName ? ", " + esc(S.settings.senderName.split(" ")[0]) : ""}</h1>
+    <p>${emailsDue ? `${emailsDue} email${emailsDue === 1 ? " is" : "s are"} ready in the Outbox` : "No emails are due right now"} and ${tasksDue} task${tasksDue === 1 ? " is" : "s are"} due.</p></div>
+    <div class="row"><button class="btn" data-act="inbox" ${S.gmail !== "ok" ? "disabled" : ""}>Check Gmail for replies</button><a class="btn primary" href="#outbox">Open Outbox</a></div></div>
+  <div class="stack">
+  ${setupNeeded ? `<div class="banner warn"><b>Before you email anyone:</b> add your name, company and mailing address in <a href="#setup">Setup</a>. They go in every email's signature and footer.</div>` : ""}
+  ${examples ? `<div class="banner">The contacts tagged <span class="tag">example</span> are sample data so you can try things out. <button class="btn sm" data-act="clear-examples">Remove example data</button></div>` : ""}
+  <div class="grid g4">
+    <div class="card tile"><div class="label">Contacts</div><div class="value">${cs.length}</div><div class="sub">${list("enrollments").filter(e => e.status === "active").length} in active sequences</div></div>
+    <div class="card tile"><div class="label">Emails · 30 days</div><div class="value">${em.length}</div><div class="sub">${em.filter(m => m.mode === "send").length} sent · ${em.filter(m => m.mode !== "send").length} drafted</div></div>
+    <div class="card tile"><div class="label">Reply rate</div><div class="value">${emailed.size ? Math.round(100 * replied / emailed.size) : 0}%</div><div class="sub">${replied} of ${emailed.size} people emailed</div></div>
+    <div class="card tile"><div class="label">Open pipeline</div><div class="value">${money(open.reduce((a, d) => a + (+d.value || 0), 0))}</div><div class="sub">${money(weighted)} weighted · ${open.length} deals</div></div>
+  </div>
+  <div class="grid side">
+    <div class="card"><div class="row" style="margin-bottom:8px"><h2>Hottest leads</h2><span class="spacer"></span><a href="#contacts" class="small">All contacts</a></div>
+      ${hot.length ? `<div class="tablewrap"><table><tbody>${hot.map(c => `<tr class="click" data-act="contact" data-id="${c.id}"><td style="width:44px">${scoreChip(c)}</td>
+        <td><b>${esc(name(c))}</b><div class="small muted">${esc([c.title, c.company].filter(Boolean).join(" · "))}</div></td><td class="r">${pill(c.status)}</td></tr>`).join("")}</tbody></table></div>`
+        : `<div class="empty">Add contacts to see who's most promising. <a href="#contacts">Go to Contacts</a></div>`}
+    </div>
+    <div class="card"><h2>Where people are</h2>
+      ${byStatus.length ? `<div class="bars">${byStatus.map(([s, n]) => `<div class="bar"><span>${s}</span><div class="track"><div class="fill" style="width:${(100 * n / maxS).toFixed(1)}%"></div></div><span class="r num">${n}</span></div>`).join("")}</div>` : `<div class="empty">No contacts yet.</div>`}
+    </div>
+  </div>
+  <div class="card"><h2>Recent activity</h2>
+    ${feed.length ? `<ul class="timeline">${feed.map(l => `<li class="${esc(l.k)}"><button class="linkish" data-act="contact" data-id="${l.c.id}">${esc(name(l.c))}</button> <span class="small muted">· ${ago(l.t)}</span><div class="small">${esc(l.d)}</div></li>`).join("")}</ul>`
+      : `<div class="empty">Emails, replies and calls show up here.</div>`}
+  </div>
+  </div>`);
+}
+
+// ---------- Outbox
+function vOutbox() {
+  const items = dueItems(), emails = items.filter(i => i.kind === "email"), tasks = items.filter(i => i.kind === "task");
+  const left = Math.max(0, (+S.settings.dailyLimit || 0) - sentToday());
+  const ready = emails.filter(i => !i.m.problem && !S.skip.has(i.e.id));
+  const send = S.settings.mode === "send";
+  const upcoming = list("enrollments").filter(e => e.status === "active" && e.nextRun > Date.now() && activeSeq(e)).sort((a, b) => a.nextRun - b.nextRun).slice(0, 8);
+  return loadingOr(`
+  <div class="head"><div><h1>Outbox</h1><p>Everything your sequences want to do right now. Review it, then run it. Emails go through your Gmail${send ? " and are <b>sent immediately</b>" : " as <b>drafts</b> you can check and send yourself"}.</p></div>
+    <div class="row"><label class="check"><input type="checkbox" id="mode-toggle" data-act="mode" ${send ? "checked" : ""}> Send right away (instead of drafts)</label></div></div>
+  <div class="stack">
+  ${S.gmail !== "ok" ? `<div class="banner bad">Gmail isn't available on this page right now, so emails can't go out. Connect Gmail in claude.ai Settings → Connectors and open this page inside Claude.</div>` : ""}
+  <div class="card row"><div><b>${ready.length}</b> email${ready.length === 1 ? "" : "s"} ready · <b>${tasks.length}</b> call/LinkedIn task${tasks.length === 1 ? "" : "s"} to create · <span class="muted">${left} of today's ${+S.settings.dailyLimit || 0} email limit left</span></div>
+    <span class="spacer"></span>
+    <button class="btn primary" data-act="run" ${(!items.length || S.busy || (ready.length && S.gmail !== "ok" && !tasks.length)) ? "disabled" : ""}>${send ? `Send ${Math.min(ready.length, left)} email${Math.min(ready.length, left) === 1 ? "" : "s"}` : `Create ${Math.min(ready.length, left)} Gmail draft${Math.min(ready.length, left) === 1 ? "" : "s"}`}${tasks.length ? ` + ${tasks.length} task${tasks.length === 1 ? "" : "s"}` : ""}</button></div>
+  ${emails.length ? emails.map(i => {
+    const skipped = S.skip.has(i.e.id);
+    return `<div class="card"><div class="row" style="align-items:flex-start">
+      <div style="flex:1;min-width:220px"><button class="linkish" data-act="contact" data-id="${i.c.id}"><b>${esc(name(i.c))}</b></button> <span class="muted small">${esc(i.c.email)} · ${esc(i.seq.name)} · step ${i.e.step + 1} of ${(i.seq.steps || []).length}</span>
+        ${i.m.problem ? `<div style="margin-top:6px">${pill("held: " + i.m.problem, "warn")} <span class="small muted">Fix the contact or add a fallback like {{first_name|there}} to the template.</span></div>` : ""}</div>
+      <div class="row">${S.sampleOK && !i.m.problem ? `<button class="btn sm" data-act="personalize" data-id="${i.e.id}">Personalize with Claude</button>` : ""}
+        ${S.overrides[i.e.id] != null ? `<button class="btn sm" data-act="unpersonalize" data-id="${i.e.id}">Undo edit</button>` : ""}
+        <button class="btn sm" data-act="edit-out" data-id="${i.e.id}">Edit</button>
+        <button class="btn sm" data-act="skip" data-id="${i.e.id}">${skipped ? "Include" : "Skip this run"}</button></div></div>
+      <div class="preview" style="margin-top:10px;${skipped ? "opacity:.45" : ""}"><div class="subj">${esc(i.m.subject || "(no subject)")}</div>${esc(i.m.body)}</div></div>`;
+  }).join("") : `<div class="card empty">No emails are due. ${list("sequences").some(s => s.status === "active") ? "Enroll more contacts or wait for the next steps." : `Activate a sequence and enroll contacts to fill the Outbox. <a href="#sequences">Go to Sequences</a>`}</div>`}
+  ${tasks.length ? `<div class="card"><h2>Tasks this run will create</h2><ul class="timeline">${tasks.map(i => `<li>${esc(STEP_TYPES[i.step.type])} — ${esc(name(i.c))} <span class="small muted">· ${esc(i.step.instructions || "")}</span></li>`).join("")}</ul></div>` : ""}
+  ${upcoming.length ? `<div class="card"><h2>Coming up</h2><div class="tablewrap"><table><tbody>${upcoming.map(e => { const s = S.data.sequences[e.seqId], st = (s.steps || [])[e.step] || {}; return `<tr><td>${esc(name(S.data.contacts[e.contactId]))}</td><td class="muted">${esc(STEP_TYPES[st.type] || "")} · ${esc(s.name)}</td><td class="r muted">${ago(e.nextRun)}</td></tr>`; }).join("")}</tbody></table></div></div>` : ""}
+  </div>`);
+}
+
+// ---------- Tasks
+function vTasks() {
+  const now = Date.now(), open = list("tasks").filter(t => t.status === "open").sort((a, b) => a.due - b.due);
+  const due = open.filter(t => t.due <= now + 0), later = open.filter(t => t.due > now);
+  const done = list("tasks").filter(t => t.status !== "open" && t.doneAt > now - DAY).sort((a, b) => b.doneAt - a.doneAt);
+  const card = t => { const c = S.data.contacts[t.contactId] || {};
+    const outs = t.type === "call" ? ["connected", "left voicemail", "no answer", "wrong number"] : t.type === "linkedin" ? ["connection sent", "message sent"] : [];
+    return `<div class="card"><div class="row" style="align-items:flex-start"><div style="flex:1;min-width:220px">
+      <div>${pill(t.type === "follow_up" ? "follow-up" : t.type)} <b>${esc(t.title)}</b></div>
+      ${c.id ? `<div class="small" style="margin-top:4px"><button class="linkish" data-act="contact" data-id="${c.id}">${esc(name(c))}</button> <span class="muted">${esc([c.title, c.company].filter(Boolean).join(" · "))}</span></div>
+        <div class="small muted mono" style="margin-top:2px">${esc(c.email || "")}${c.phone ? " · " + esc(c.phone) : ""}</div>
+        ${c.linkedin_url ? `<div class="small"><a href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">Open LinkedIn profile</a></div>` : ""}` : ""}
+      ${t.notes ? `<div class="small" style="margin-top:4px">${esc(t.notes)}</div>` : ""}<div class="small muted">Due ${ago(t.due)}</div></div>
+      <div class="row"><select id="out-${t.id}" aria-label="Outcome"><option value="">Outcome…</option>${[...outs, "interested", "meeting booked", "not interested"].map(o => `<option>${o}</option>`).join("")}</select>
+        <button class="btn sm primary" data-act="task-done" data-id="${t.id}">Done</button><button class="btn sm" data-act="task-skip" data-id="${t.id}">Skip</button>
+        <button class="btn sm" data-act="task-snooze" data-id="${t.id}" title="Move to tomorrow">Tomorrow</button></div></div></div>`; };
+  return loadingOr(`<div class="head"><div><h1>Tasks</h1><p>Calls, LinkedIn touches and follow-ups. Finishing a sequence task moves that person to their next step.</p></div>
+    <button class="btn" data-act="new-task">Add a task</button></div>
+  <div class="stack"><h2>Due now · ${due.length}</h2>${due.length ? due.map(card).join("") : `<div class="card empty">Nothing due. Nice work.</div>`}
+  ${later.length ? `<h2>Later</h2>${later.map(card).join("")}` : ""}
+  ${done.length ? `<h2>Finished today</h2><div class="card"><table><tbody>${done.map(t => `<tr><td>${pill(t.status)}</td><td>${esc(t.title)}</td><td class="muted">${esc(t.outcome || "")}</td></tr>`).join("")}</tbody></table></div>` : ""}</div>`);
+}
+
+// ---------- Contacts
+function filteredContacts() {
+  const q = lc(S.f.q);
+  return list("contacts").filter(c => (!S.f.status || c.status === S.f.status) && (!S.f.tag || (c.tags || []).includes(S.f.tag)) &&
+    (!q || [c.email, c.first_name, c.last_name, c.company, c.title].some(v => lc(v).includes(q)))).sort((a, b) => score(b) - score(a) || (b.createdAt || 0) - (a.createdAt || 0));
+}
+function vContacts() {
+  const rows = filteredContacts(), tags = [...new Set(list("contacts").flatMap(c => c.tags || []))].sort();
+  const seqs = list("sequences").filter(s => s.status !== "archived");
+  return loadingOr(`<div class="head"><div><h1>Contacts</h1><p>${rows.length} of ${list("contacts").length} shown, best leads first.</p></div>
+    <div class="row"><button class="btn" data-act="import">Import CSV</button><button class="btn primary" data-act="new-contact">Add contact</button></div></div>
+  <div class="stack"><div class="card row">
+    <input type="search" id="f-q" placeholder="Search name, email, company, title" value="${esc(S.f.q)}" style="flex:1;min-width:200px">
+    <select id="f-status" aria-label="Status"><option value="">Any status</option>${STATUSES.map(s => `<option ${S.f.status === s ? "selected" : ""}>${s}</option>`).join("")}</select>
+    <select id="f-tag" aria-label="Tag"><option value="">Any tag</option>${tags.map(t => `<option ${S.f.tag === t ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>
+  ${S.sel.size ? `<div class="card row"><b>${S.sel.size} selected</b><span class="spacer"></span>
+    <select id="bulk-seq" aria-label="Sequence"><option value="">Choose a sequence…</option>${seqs.map(s => `<option value="${s.id}">${esc(s.name)}${s.status !== "active" ? " (" + s.status + ")" : ""}</option>`).join("")}</select>
+    <button class="btn sm primary" data-act="bulk-enroll">Enroll</button>
+    <input type="text" id="bulk-tag" placeholder="tag" style="width:110px"><button class="btn sm" data-act="bulk-tag">Add tag</button>
+    <button class="btn sm danger" data-act="bulk-delete">Delete</button><button class="btn sm" data-act="bulk-clear">Clear</button></div>` : ""}
+  <div class="card tablewrap">${rows.length ? `<table><thead><tr><th><input type="checkbox" data-act="sel-all" aria-label="Select all" ${rows.length && rows.every(c => S.sel.has(c.id)) ? "checked" : ""}></th><th>Score</th><th>Name</th><th>Company</th><th>Status</th><th>Tags</th><th class="r">Last contacted</th></tr></thead><tbody>
+    ${rows.slice(0, 400).map(c => `<tr class="click" data-act="contact" data-id="${c.id}"><td><input type="checkbox" data-act="sel" data-id="${c.id}" aria-label="Select ${esc(name(c))}" ${S.sel.has(c.id) ? "checked" : ""}></td>
+      <td>${scoreChip(c)}</td><td><b>${esc(name(c))}</b><div class="small muted">${esc(c.title || "")}${c.title ? " · " : ""}<span class="mono">${esc(c.email)}</span></div></td>
+      <td>${esc(c.company || "")}</td><td>${pill(c.status)}</td><td>${(c.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</td><td class="r muted">${ago(c.lastContacted)}</td></tr>`).join("")}</tbody></table>
+    ${rows.length > 400 ? `<p class="small muted">Showing the first 400. Search or filter to narrow it down.</p>` : ""}`
+    : `<div class="empty">${list("contacts").length ? "No contacts match these filters." : "No contacts yet. Import a CSV from Apollo, LinkedIn or a spreadsheet, or add one by hand."}</div>`}</div></div>`);
+}
+
+// ---------- Sequences
+function seqStats(id) {
+  const en = list("enrollments").filter(e => e.seqId === id), em = list("emails").filter(m => m.seqId === id);
+  const emailed = new Set(em.map(m => m.contactId));
+  return { total: en.length, active: en.filter(e => e.status === "active").length, replied: en.filter(e => e.status === "replied").length,
+    emails: em.length, rate: emailed.size ? Math.round(100 * en.filter(e => e.status === "replied" && emailed.has(e.contactId)).length / emailed.size) : 0 };
+}
+function vSequences() {
+  if (S.seqId && S.data.sequences[S.seqId]) return vSequence(S.data.sequences[S.seqId]);
+  const seqs = list("sequences").filter(s => s.status !== "archived").sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  return loadingOr(`<div class="head"><div><h1>Sequences</h1><p>Step-by-step cadences of emails, LinkedIn touches and calls. A sequence stops for a person as soon as they reply.</p></div>
+    <button class="btn primary" data-act="new-seq">New sequence</button></div>
+  <div class="stack">${seqs.length ? seqs.map(s => { const st = seqStats(s.id), steps = s.steps || [];
+    return `<div class="card row" style="align-items:flex-start"><div style="flex:1;min-width:220px"><div class="row"><button class="linkish" data-act="open-seq" data-id="${s.id}"><h2>${esc(s.name)}</h2></button>${pill(s.status)}</div>
+      <div class="small muted" style="margin-top:4px">${esc(s.description || "")}</div>
+      <div class="small" style="margin-top:6px">${steps.map(x => STEP_TYPES[x.type]).join(" → ") || "No steps yet"}</div></div>
+      <div class="row small num"><span><b>${st.active}</b> active</span><span><b>${st.emails}</b> emails</span><span><b>${st.rate}%</b> replied</span><button class="btn sm" data-act="open-seq" data-id="${s.id}">Open</button></div></div>`; }).join("")
+    : `<div class="card empty">No sequences yet. Create one, or ask Claude to set one up for you.</div>`}</div>`);
+}
+function vSequence(s) {
+  const st = seqStats(s.id), steps = s.steps || [];
+  let day = 0;
+  const people = list("enrollments").filter(e => e.seqId === s.id).sort((a, b) => (b.enrolledAt || 0) - (a.enrolledAt || 0));
+  const tags = [...new Set(list("contacts").flatMap(c => c.tags || []))].sort();
+  return `<div class="head"><div><button class="linkish small" data-act="back-seqs">← All sequences</button><h1 style="margin-top:6px">${esc(s.name)} ${pill(s.status)}</h1><p>${esc(s.description || "")}</p></div>
+    <div class="row">${s.status === "active" ? `<button class="btn" data-act="seq-status" data-v="paused">Pause</button>` : `<button class="btn primary" data-act="seq-status" data-v="active">Activate</button>`}
+      <button class="btn" data-act="seq-edit">Rename</button><button class="btn" data-act="seq-clone">Duplicate</button><button class="btn danger" data-act="seq-status" data-v="archived">Archive</button></div></div>
+  <div class="stack">
+  ${s.status !== "active" ? `<div class="banner warn">This sequence is ${esc(s.status)}. Nothing goes out until you activate it. You can enroll people now and they'll start once it's active.</div>` : ""}
+  <div class="grid g4"><div class="card tile"><div class="label">Enrolled</div><div class="value">${st.total}</div><div class="sub">${st.active} active</div></div>
+    <div class="card tile"><div class="label">Emails</div><div class="value">${st.emails}</div></div>
+    <div class="card tile"><div class="label">Replied</div><div class="value">${st.replied}</div></div>
+    <div class="card tile"><div class="label">Reply rate</div><div class="value">${st.rate}%</div></div></div>
+  <div class="grid side">
+    <div class="card"><div class="row" style="margin-bottom:10px"><h2>Steps</h2><span class="spacer"></span><button class="btn sm primary" data-act="step-add">Add step</button></div>
+      <div class="steps">${steps.map((x, i) => { day += +x.delay || 0; const tpl = x.templateId && S.data.templates[x.templateId];
+        const what = x.type === "email" ? (x.thread && i > 0 ? "Reply in the same thread" : (x.subject || (tpl && tpl.subject) || "")) + (tpl ? ` <span class="muted small">· template “${esc(tpl.name)}”</span>` : "") : esc(x.instructions || "No instructions");
+        return `<div class="step"><div class="day">Day<b>${day}</b></div><div><div class="kind">${STEP_TYPES[x.type]}</div><div>${x.type === "email" && !(x.thread && i > 0) ? esc(x.subject || (tpl && tpl.subject) || "") + (tpl ? ` <span class="muted small">· template “${esc(tpl.name)}”</span>` : "") : what}</div></div>
+          <div class="row"><button class="btn sm" data-act="step-up" data-i="${i}" ${i ? "" : "disabled"} aria-label="Move up">↑</button><button class="btn sm" data-act="step-down" data-i="${i}" ${i < steps.length - 1 ? "" : "disabled"} aria-label="Move down">↓</button>
+          <button class="btn sm" data-act="step-edit" data-i="${i}">Edit</button><button class="btn sm danger" data-act="step-del" data-i="${i}" aria-label="Delete step">✕</button></div></div>`; }).join("") || `<div class="empty">No steps yet. Add the first email.</div>`}</div></div>
+    <div class="stack"><div class="card"><h2>Enroll people</h2>
+      <div class="row"><select id="enroll-tag" aria-label="Tag" style="flex:1"><option value="">Everyone tagged…</option>${tags.map(t => `<option>${esc(t)}</option>`).join("")}</select><button class="btn" data-act="enroll-tag">Enroll</button></div>
+      <p class="small muted">Or select people on <a href="#contacts">Contacts</a>. Unsubscribed, bounced and already-enrolled people are skipped.</p></div>
+      <div class="card small"><label class="check"><input type="checkbox" data-act="seq-stoponreply" ${s.stopOnReply !== false ? "checked" : ""}> Stop for a person when they reply or book a meeting</label></div></div>
+  </div>
+  <div class="card tablewrap"><h2>People in this sequence</h2>${people.length ? `<table><thead><tr><th>Contact</th><th>Status</th><th>Step</th><th class="r">Next</th><th></th></tr></thead><tbody>${people.map(e => { const c = S.data.contacts[e.contactId];
+    return `<tr><td>${c ? `<button class="linkish" data-act="contact" data-id="${c.id}">${esc(name(c))}</button>` : "Deleted contact"}</td><td>${pill(e.status)}</td><td class="num">${Math.min(e.step + 1, steps.length)} / ${steps.length}</td>
+      <td class="r muted">${e.status === "active" ? (e.nextRun == null ? "waiting on task" : e.nextRun <= Date.now() ? "due now" : ago(e.nextRun)) : "—"}</td>
+      <td class="r">${e.status === "active" ? `<button class="btn sm" data-act="enr" data-v="paused" data-id="${e.id}">Pause</button>` : e.status === "paused" ? `<button class="btn sm" data-act="enr" data-v="active" data-id="${e.id}">Resume</button>` : ""}</td></tr>`; }).join("")}</tbody></table>`
+    : `<div class="empty">Nobody enrolled yet.</div>`}</div></div>`;
+}
+
+// ---------- Templates
+function vTemplates() {
+  const ts = list("templates").sort((a, b) => (a.category || "").localeCompare(b.category || "") || a.name.localeCompare(b.name));
+  return loadingOr(`<div class="head"><div><h1>Templates</h1><p>Reusable emails with merge fields like <span class="mono">{{first_name|there}}</span> and variations like <span class="mono">[[Hi|Hey]]</span>.</p></div>
+    <button class="btn primary" data-act="tpl-new">New template</button></div>
+  <div class="card tablewrap">${ts.length ? `<table><thead><tr><th>Name</th><th>Category</th><th>Subject</th></tr></thead><tbody>${ts.map(t => `<tr class="click" data-act="tpl-edit" data-id="${t.id}"><td><b>${esc(t.name)}</b></td><td class="muted">${esc(t.category || "")}</td><td class="muted">${esc(t.subject)}</td></tr>`).join("")}</tbody></table>`
+    : `<div class="empty">No templates yet.</div>`}</div>`);
+}
+
+// ---------- Pipeline
+function vPipeline() {
+  const stages = S.settings.stages || DEFAULTS.stages, deals = list("deals");
+  const open = deals.filter(d => !["won", "lost"].includes(d.stage)), won = deals.filter(d => d.stage === "won"), lost = deals.filter(d => d.stage === "lost");
+  const weighted = open.reduce((a, d) => a + (+d.value || 0) * ((d.probability ?? PROB[d.stage] ?? 0) / 100), 0);
+  return loadingOr(`<div class="head"><div><h1>Pipeline</h1><p>Open ${money(open.reduce((a, d) => a + (+d.value || 0), 0))} · weighted ${money(weighted)} · won ${money(won.reduce((a, d) => a + (+d.value || 0), 0))} · win rate ${won.length + lost.length ? Math.round(100 * won.length / (won.length + lost.length)) : 0}%</p></div>
+    <button class="btn primary" data-act="deal-new">New deal</button></div>
+  <p class="small muted">Drag a card to another column, or open it to change the stage.</p>
+  <div class="board">${stages.map(st => { const ds = deals.filter(d => d.stage === st).sort((a, b) => (+b.value || 0) - (+a.value || 0));
+    return `<div class="col" data-stage="${esc(st)}"><div class="col-h"><b>${esc(st)}</b><span class="small muted num">${money(ds.reduce((a, d) => a + (+d.value || 0), 0))} · ${ds.length}</span></div>
+      ${ds.map(d => { const c = S.data.contacts[d.contactId]; return `<button class="deal" draggable="true" data-deal="${d.id}" data-act="deal-edit" data-id="${d.id}"><b>${esc(d.name)}</b><span class="num">${money(d.value)}${d.close ? ` <span class="small muted">· closes ${esc(d.close)}</span>` : ""}</span>${c ? `<span class="small muted">${esc(name(c))}${c.company ? " · " + esc(c.company) : ""}</span>` : ""}</button>`; }).join("")}</div>`; }).join("")}</div>`);
+}
+
+// ---------- Setup
+function vSetup() {
+  const st = S.settings;
+  return loadingOr(`<div class="head"><div><h1>Setup</h1><p>Who your emails come from and how much goes out each day.</p></div></div>
+  <form class="stack" data-form id="setup-form">
+    <div class="grid g2"><div class="card fields"><h2>Sender</h2>
+      <label class="f">Your name<input type="text" id="s-senderName" value="${esc(st.senderName)}" placeholder="e.g. Sam Rivera"></label>
+      <label class="f">Company<input type="text" id="s-company" value="${esc(st.company)}"></label>
+      <label class="f">Mailing address (required in sales email in the US, EU, UK and Canada)<input type="text" id="s-address" value="${esc(st.address)}" placeholder="Street, city, country"></label>
+      <label class="f">Signature<textarea id="s-signature" style="min-height:90px">${esc(st.signature)}</textarea></label></div>
+    <div class="card fields"><h2>Sending</h2>
+      <label class="f">Emails per day (all sequences together)<input type="number" min="0" max="500" id="s-dailyLimit" value="${esc(st.dailyLimit)}"></label>
+      <label class="check"><input type="checkbox" id="s-mode" ${st.mode === "send" ? "checked" : ""}> Send right away from Gmail (otherwise emails become Gmail drafts)</label>
+      <label class="f">Pipeline stages, in order (keep “won” and “lost”)<input type="text" id="s-stages" value="${esc((st.stages || DEFAULTS.stages).join(", "))}"></label>
+      <p class="small muted">New Gmail accounts: start around 20 a day and raise it slowly. Keep cold email short, plain and personal.</p></div></div>
+    <div class="row"><span class="spacer"></span><button class="btn primary" type="submit">Save setup</button></div>
+  </form>
+  <div class="card" style="margin-top:16px"><h2>How this works</h2><ul class="small">
+    <li>Your data is saved with this page. Only you, and people you give edit access, can see it.</li>
+    <li>Emails go out through your own Gmail, so replies land in your inbox. Use <b>Check Gmail for replies</b> on the Dashboard to stop sequences for people who answered.</li>
+    <li>Nothing runs in the background: open the Outbox and run it once a day.</li>
+    <li>Opens and clicks aren't tracked here. Replies are the number that matters.</li></ul></div>`);
+}
+
+// ------------------------------------------------------------------ modals
+function showContact(id) {
+  const c = S.data.contacts[id]; if (!c) return;
+  const ens = list("enrollments").filter(e => e.contactId === id), ems = list("emails").filter(m => m.contactId === id).sort((a, b) => b.at - a.at);
+  const deals = list("deals").filter(d => d.contactId === id), seqs = list("sequences").filter(s => s.status !== "archived");
+  openModal(`<div class="modal-h"><div><h2>${esc(name(c))} ${pill(c.status)} ${scoreChip(c)}</h2><div class="small muted">${esc([c.title, c.company].filter(Boolean).join(" at "))}</div>
+    <div class="small mono">${esc(c.email)}${c.phone ? " · " + esc(c.phone) : ""}</div>${c.linkedin_url ? `<a class="small" href="${esc(c.linkedin_url)}" target="_blank" rel="noopener">LinkedIn profile</a>` : ""}</div>
+    <button class="btn sm" data-close aria-label="Close">Close</button></div>
+  <div class="grid g2"><div class="stack">
+    <div class="fields"><label class="f">Note or call summary<textarea id="c-note" style="min-height:70px;font-family:var(--body)"></textarea></label>
+      <div class="row"><button class="btn sm" data-c="note">Add note</button><button class="btn sm" data-c="call">Log call</button><button class="btn sm" data-c="replied">Mark replied</button><button class="btn sm primary" data-c="meeting">Meeting booked</button></div></div>
+    <div class="row"><select id="c-seq" aria-label="Sequence" style="flex:1"><option value="">Add to sequence…</option>${seqs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select><button class="btn sm" data-c="enroll">Enroll</button></div>
+    <div class="row"><label class="f" style="flex:1">Status<select id="c-status">${STATUSES.map(s => `<option ${c.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></label></div>
+    <div class="row"><button class="btn sm" data-c="edit">Edit details</button><button class="btn sm" data-c="deal">New deal</button><button class="btn sm danger" data-c="optout">Do not contact</button><button class="btn sm danger" data-c="delete">Delete</button></div>
+    ${ens.length ? `<div><h3>Sequences</h3>${ens.map(e => `<div class="small">${esc((S.data.sequences[e.seqId] || {}).name || "Deleted sequence")} ${pill(e.status)}</div>`).join("")}</div>` : ""}
+    ${deals.length ? `<div><h3>Deals</h3>${deals.map(d => `<div class="small">${esc(d.name)} · ${money(d.value)} ${pill(d.stage)}</div>`).join("")}</div>` : ""}
+    ${Object.keys(c.custom || {}).length ? `<div><h3>Custom fields</h3>${Object.entries(c.custom).map(([k, v]) => `<div class="small"><span class="muted mono">{{${esc(k)}}}</span> ${esc(v)}</div>`).join("")}</div>` : ""}
+  </div><div class="stack"><div><h3>Timeline</h3><ul class="timeline">${(c.log || []).map(l => `<li class="${esc(l.k)}"><span class="small muted">${ago(l.t)}</span><div class="small">${esc(l.d)}</div></li>`).join("") || `<li class="small muted">Nothing yet.</li>`}</ul></div>
+    ${ems.length ? `<div><h3>Emails</h3>${ems.map(m => `<details><summary class="small">${pill(m.mode === "send" ? "sent" : "draft")} ${esc(m.subject)} <span class="muted">· ${ago(m.at)}</span></summary><div class="preview small">${esc(m.body)}</div>${m.url ? `<a class="small" href="${esc(m.url)}" target="_blank" rel="noopener">Open in Gmail</a>` : ""}</details>`).join("")}</div>` : ""}
+  </div></div>`, { wide: true });
+  const root = $("#modal-root .modal");
+  $("#c-status").addEventListener("change", async ev => { if (!needDb()) return; await logC(id, "status", "Status set to " + ev.target.value, { status: ev.target.value }); if (TERMINAL.includes(ev.target.value)) await stopFor(id, ev.target.value, false); toast("Status updated."); });
+  root.addEventListener("click", async ev => {
+    if (ev.target.closest("[data-close]")) return closeModal();
+    const b = ev.target.closest("[data-c]"); if (!b) return; const a = b.dataset.c, note = $("#c-note") ? $("#c-note").value.trim() : "";
+    if (a === "edit") return contactForm(id);
+    if (a === "deal") return dealForm(null, id);
+    if (!needDb()) return;
+    if (a === "note") { if (!note) return toast("Write a note first."); await logC(id, "note", note); }
+    if (a === "call") await logC(id, "call", note || "Logged a call", { lastContacted: Date.now(), ...(c.status === "new" ? { status: "contacted" } : {}) });
+    if (a === "replied") await markReplied(id, note || "Marked as replied");
+    if (a === "meeting") await meeting(id, note || "Meeting booked");
+    if (a === "enroll") { const sid = $("#c-seq").value; if (!sid) return toast("Choose a sequence."); const r = await enroll(sid, [id]); if (r) toast(r.added ? "Enrolled." : "Already in that sequence, or can't be contacted."); }
+    if (a === "optout") { if (!(await confirmBox(`Stop all outreach to ${name(c)}? They'll be marked do-not-contact.`, "Do not contact"))) return showContact(id); await optOut(id, "unsubscribed"); }
+    if (a === "delete") { if (!(await confirmBox(`Delete ${name(c)} and their history? This can't be undone.`, "Delete"))) return showContact(id);
+      for (const e of list("enrollments").filter(e => e.contactId === id)) await remove("enrollments", e.id);
+      for (const t of list("tasks").filter(t => t.contactId === id)) await remove("tasks", t.id);
+      await remove("contacts", id); closeModal(); toast("Contact deleted."); return; }
+    showContact(id);
+  });
+}
+function contactForm(id) {
+  const c = id ? S.data.contacts[id] : {};
+  openModal(`<div class="modal-h"><h2>${id ? "Edit contact" : "Add contact"}</h2><button class="btn sm" data-close>Close</button></div>
+  <form id="cf" class="fields two">
+    ${[["email", "Email *", "email"], ["first_name", "First name"], ["last_name", "Last name"], ["title", "Job title"], ["company", "Company"], ["phone", "Phone"], ["linkedin_url", "LinkedIn URL", "url"]].map(([k, l, t]) =>
+      `<label class="f">${l}<input type="${t || "text"}" name="${k}" value="${esc(c[k] || "")}" ${k === "email" ? "required" : ""}></label>`).join("")}
+    <label class="f">Tags (comma separated)<input type="text" name="tags" value="${esc((c.tags || []).join(", "))}"></label>
+    <label class="f" style="grid-column:1/-1">Custom fields, one per line as <span class="mono">key: value</span> — use them in emails as <span class="mono">{{key}}</span>
+      <textarea name="custom" style="min-height:70px">${esc(Object.entries(c.custom || {}).map(([k, v]) => k + ": " + v).join("\n"))}</textarea></label>
+    <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Save</button></div></form>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#cf").addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target), email = lc(f.get("email"));
+    if (!EMAIL_RE.test(email)) return toast("Enter a valid email address.", "bad");
+    if (list("contacts").some(x => lc(x.email) === email && x.id !== id)) return toast("Another contact already uses that email.", "bad");
+    const custom = {}; String(f.get("custom") || "").split("\n").forEach(l => { const i = l.indexOf(":"); if (i > 0) custom[l.slice(0, i).trim()] = l.slice(i + 1).trim(); });
+    const d = { email, tags: tagsOf(f.get("tags")), custom }; for (const k of ["first_name", "last_name", "title", "company", "phone", "linkedin_url"]) d[k] = String(f.get(k) || "").trim();
+    if (id) { await patch("contacts", id, d); showContact(id); }
+    else { const nid = newId(); await put("contacts", nid, { ...d, status: "new", source: "Added by hand", createdAt: Date.now(), log: [{ t: Date.now(), k: "created", d: "Added by hand" }] }); showContact(nid); }
+    toast("Saved.");
+  });
+}
+function importForm() {
+  const seqs = list("sequences").filter(s => s.status !== "archived");
+  openModal(`<div class="modal-h"><h2>Import contacts</h2><button class="btn sm" data-close>Close</button></div>
+  <p class="small muted">Any CSV with an Email column works: Apollo, LinkedIn Sales Navigator, HubSpot or a spreadsheet. Extra columns (like <span class="mono">pain_point</span>) become merge fields you can use in emails.</p>
+  <form id="imf" class="fields"><label class="f">CSV file<input type="file" id="im-file" accept=".csv,text/csv"></label>
+    <label class="f">Or paste CSV<textarea id="im-text" placeholder="email,first_name,company,pain_point&#10;jane@acme.com,Jane,Acme,slow follow-ups"></textarea></label>
+    <div class="fields two"><label class="f">Tag everyone with<input type="text" id="im-tags" placeholder="e.g. q1-list"></label>
+      <label class="f">Then enroll in<select id="im-seq"><option value="">Don't enroll</option>${seqs.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></label></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">Import</button></div><div id="im-res"></div></form>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#imf").addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!needDb()) return;
+    const file = $("#im-file").files[0], text = file ? await file.text() : $("#im-text").value;
+    const r = await importCSV(text, $("#im-tags").value, $("#im-seq").value);
+    render();
+    $("#im-res").innerHTML = r.error ? `<div class="banner bad">${esc(r.error)}</div>` :
+      `<div class="banner">Added ${r.created}, updated ${r.updated}, skipped ${r.skipped} without a valid email.${r.enrolled ? ` Enrolled ${r.enrolled.added} in the sequence.` : ""}</div>`;
+  });
+}
+function templateForm(id) {
+  const t = id ? S.data.templates[id] : { name: "", category: "", subject: "", body: "" };
+  const sampleC = list("contacts").filter(c => !TERMINAL.includes(c.status)).sort((a, b) => score(b) - score(a))[0] || { id: "x", first_name: "Alex", company: "Acme", title: "Head of Sales", custom: {} };
+  openModal(`<div class="modal-h"><h2>${id ? "Edit template" : "New template"}</h2><button class="btn sm" data-close>Close</button></div>
+  <div class="grid g2"><form id="tf" class="fields">
+    <div class="fields two"><label class="f">Name<input type="text" name="name" required value="${esc(t.name)}"></label><label class="f">Category<input type="text" name="category" value="${esc(t.category || "")}"></label></div>
+    <label class="f">Subject<input type="text" name="subject" id="t-subject" value="${esc(t.subject)}"></label>
+    <label class="f">Body (your signature and footer are added automatically)<textarea name="body" id="t-body" style="min-height:220px">${esc(t.body)}</textarea></label>
+    <div class="chips" aria-label="Insert merge field">${FIELDS.map(f => `<button type="button" data-ins="${f}">${f}</button>`).join("")}</div>
+    ${S.sampleOK ? `<div class="fields" style="border-top:1px solid var(--line);padding-top:10px"><label class="f">Ask Claude to write it<input type="text" id="t-brief" placeholder="e.g. cold email to agency owners about faster lead follow-up"></label><button type="button" class="btn sm" id="t-ai">Write draft with Claude</button></div>` : ""}
+    <div class="row">${id ? `<button type="button" class="btn danger" id="t-del">Delete</button>` : ""}<span class="spacer"></span><button class="btn primary" type="submit">Save template</button></div></form>
+  <div><h3 style="margin-bottom:6px">Preview for ${esc(name(sampleC))}</h3><div class="preview" id="t-prev"></div></div></div>`, { wide: true });
+  const prev = () => { const m = compose(sampleC, { subject: $("#t-subject").value, body: $("#t-body").value }, null);
+    $("#t-prev").innerHTML = `<div class="subj">${esc(m.subject)}</div>${esc(m.body)}${m.missing.length ? `\n\n<span class="pill warn">This person has no ${esc(m.missing.join(", "))} — add a fallback like {{${esc(m.missing[0])}|there}}</span>` : ""}`; };
+  prev(); $("#t-subject").oninput = prev; $("#t-body").oninput = prev;
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#modal-root .chips").onclick = ev => { const b = ev.target.closest("[data-ins]"); if (!b) return; const ta = $("#t-body"), v = "{{" + b.dataset.ins + "}}", s = ta.selectionStart ?? ta.value.length;
+    ta.value = ta.value.slice(0, s) + v + ta.value.slice(ta.selectionEnd ?? s); ta.focus(); prev(); };
+  if ($("#t-ai")) $("#t-ai").onclick = async () => {
+    const brief = $("#t-brief").value.trim(); if (!brief) return toast("Describe the email first.");
+    $("#t-ai").disabled = true; $("#t-ai").textContent = "Writing…";
+    try {
+      const r = await sample.json(`Write a short, plain-text B2B cold email template.\nBrief: ${brief}\nSender company: ${S.settings.company || "(not set)"}\nRules: under 110 words, one clear low-friction question at the end, no hype, no links, no signature or sign-off (added automatically). Use merge fields exactly like {{first_name|there}} and {{company|your team}} — always with a fallback after the pipe. Return JSON: {"subject": string, "body": string}.`, { modelTier: "default" });
+      if (r && r.body) { $("#t-subject").value = r.subject || ""; $("#t-body").value = r.body; prev(); }
+    } catch (e) { toast(e && e.code === "rate_limited" ? "Claude is busy — try again in a minute." : "Claude couldn't write that just now.", "bad"); }
+    finally { $("#t-ai").disabled = false; $("#t-ai").textContent = "Write draft with Claude"; }
+  };
+  if ($("#t-del")) $("#t-del").onclick = async () => { if (!(await confirmBox("Delete this template? Steps using it will need new content.", "Delete"))) return templateForm(id); await remove("templates", id); toast("Template deleted."); };
+  $("#tf").addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target);
+    const d = { name: String(f.get("name")).trim(), category: String(f.get("category") || "").trim(), subject: String(f.get("subject") || ""), body: String(f.get("body") || "") };
+    if (!d.name || !d.subject.trim() || !d.body.trim()) return toast("Name, subject and body are all needed.", "bad");
+    await put("templates", id || newId(), d); closeModal(); toast("Template saved.");
+  });
+}
+function stepForm(s, idx) {
+  const st = idx != null ? s.steps[idx] : { type: "email", delay: (s.steps || []).length ? 2 : 0, thread: (s.steps || []).length ? true : false };
+  const tpls = list("templates").sort((a, b) => a.name.localeCompare(b.name));
+  openModal(`<div class="modal-h"><h2>${idx != null ? "Edit step" : "Add step"}</h2><button class="btn sm" data-close>Close</button></div>
+  <form id="sf" class="fields">
+    <div class="fields two"><label class="f">Type<select name="type" id="sf-type">${Object.entries(STEP_TYPES).map(([k, v]) => `<option value="${k}" ${st.type === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+      <label class="f">Wait this many days after the previous step<input type="number" min="0" name="delay" value="${+st.delay || 0}"></label></div>
+    <div class="fields" data-only="email"><label class="f">Template<select name="templateId"><option value="">Write it below</option>${tpls.map(t => `<option value="${t.id}" ${st.templateId === t.id ? "selected" : ""}>${esc(t.name)}</option>`).join("")}</select></label>
+      <label class="check"><input type="checkbox" name="thread" ${st.thread ? "checked" : ""}> Send as a reply in the same email thread</label>
+      <label class="f">Subject (overrides the template)<input type="text" name="subject" value="${esc(st.subject || "")}"></label>
+      <label class="f">Body (overrides the template)<textarea name="body">${esc(st.body || "")}</textarea></label></div>
+    <label class="f" data-only="manual">What to do<textarea name="instructions" style="min-height:70px;font-family:var(--body)">${esc(st.instructions || "")}</textarea></label>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">Save step</button></div></form>`);
+  const sync = () => { const em = $("#sf-type").value === "email"; $("#modal-root [data-only=email]").hidden = !em; $("#modal-root [data-only=manual]").hidden = em; };
+  sync(); $("#sf-type").onchange = sync; $("#modal-root [data-close]").onclick = closeModal;
+  $("#sf").addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target);
+    const d = { type: f.get("type"), delay: Math.max(0, parseInt(f.get("delay"), 10) || 0) };
+    if (d.type === "email") { d.templateId = f.get("templateId") || ""; d.thread = !!f.get("thread"); d.subject = String(f.get("subject") || ""); d.body = String(f.get("body") || "");
+      if (!d.templateId && !d.body.trim()) return toast("Pick a template or write a body.", "bad");
+      if (!d.templateId && !d.subject.trim() && !(d.thread && idx !== 0 && (s.steps || []).length)) return toast("Add a subject, or send it as a reply in the same thread.", "bad"); }
+    else d.instructions = String(f.get("instructions") || "");
+    const steps = [...(s.steps || [])]; if (idx != null) steps[idx] = d; else steps.push(d);
+    await patch("sequences", s.id, { steps }); closeModal(); toast("Step saved.");
+  });
+}
+function seqForm(s) {
+  openModal(`<div class="modal-h"><h2>${s ? "Rename sequence" : "New sequence"}</h2><button class="btn sm" data-close>Close</button></div>
+  <form id="qf" class="fields"><label class="f">Name<input type="text" name="name" required value="${esc(s ? s.name : "")}" placeholder="e.g. Agency owners — Q1"></label>
+    <label class="f">Who it's for and the angle<input type="text" name="description" value="${esc(s ? s.description || "" : "")}"></label>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="submit">${s ? "Save" : "Create"}</button></div></form>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#qf").addEventListener("submit", async ev => { ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target), d = { name: String(f.get("name")).trim(), description: String(f.get("description") || "").trim() };
+    if (s) await patch("sequences", s.id, d); else { const id = newId(); await put("sequences", id, { ...d, status: "draft", steps: [], stopOnReply: true, createdAt: Date.now() }); S.seqId = id; }
+    closeModal(); render(); });
+}
+function dealForm(id, contactId) {
+  const d = id ? S.data.deals[id] : { name: "", stage: (S.settings.stages || DEFAULTS.stages)[0], value: "", contactId: contactId || "" };
+  if (!id && contactId) { const c = S.data.contacts[contactId]; if (c) d.name = (c.company || name(c)) + " — new deal"; }
+  const cs = list("contacts").sort((a, b) => score(b) - score(a)).slice(0, 800);
+  openModal(`<div class="modal-h"><h2>${id ? "Edit deal" : "New deal"}</h2><button class="btn sm" data-close>Close</button></div>
+  <form id="df" class="fields two"><label class="f" style="grid-column:1/-1">Deal name<input type="text" name="name" required value="${esc(d.name)}"></label>
+    <label class="f">Contact<select name="contactId"><option value="">—</option>${cs.map(c => `<option value="${c.id}" ${d.contactId === c.id ? "selected" : ""}>${esc(name(c))}${c.company ? " · " + esc(c.company) : ""}</option>`).join("")}</select></label>
+    <label class="f">Stage<select name="stage">${(S.settings.stages || DEFAULTS.stages).map(s => `<option ${d.stage === s ? "selected" : ""}>${esc(s)}</option>`).join("")}</select></label>
+    <label class="f">Value ($)<input type="number" min="0" step="any" name="value" value="${esc(d.value)}"></label>
+    <label class="f">Expected close<input type="date" name="close" value="${esc(d.close || "")}"></label>
+    <label class="f" style="grid-column:1/-1">Notes<textarea name="notes" style="min-height:70px;font-family:var(--body)">${esc(d.notes || "")}</textarea></label>
+    <div class="row" style="grid-column:1/-1">${id ? `<button type="button" class="btn danger" id="d-del">Delete</button>` : ""}<span class="spacer"></span><button class="btn primary" type="submit">Save deal</button></div></form>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  if ($("#d-del")) $("#d-del").onclick = async () => { if (!(await confirmBox("Delete this deal?", "Delete"))) return dealForm(id); await remove("deals", id); toast("Deal deleted."); };
+  $("#df").addEventListener("submit", async ev => {
+    ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target);
+    const nd = { name: String(f.get("name")).trim(), contactId: f.get("contactId") || "", stage: f.get("stage"), value: +f.get("value") || 0, close: f.get("close") || "", notes: String(f.get("notes") || "") };
+    nd.probability = PROB[nd.stage] ?? 30;
+    await saveDeal(id, nd); closeModal(); toast("Deal saved.");
+  });
+}
+async function saveDeal(id, nd) {
+  const old = id ? S.data.deals[id] : null;
+  if (id) await patch("deals", id, nd); else await put("deals", newId(), { ...nd, createdAt: Date.now() });
+  const c = S.data.contacts[nd.contactId];
+  if (c && (!old || old.stage !== nd.stage)) {
+    const extra = nd.stage === "won" ? { status: "customer" } : (!old && ["new", "contacted", "engaged", "replied", "meeting"].includes(c.status) ? { status: "qualified" } : {});
+    await logC(c.id, "deal", (old ? `Deal “${nd.name}” moved to ${nd.stage}` : `Deal “${nd.name}” created (${nd.stage})`), extra);
+  }
+}
+function taskForm() {
+  const cs = list("contacts").sort((a, b) => score(b) - score(a)).slice(0, 800);
+  openModal(`<div class="modal-h"><h2>Add a task</h2><button class="btn sm" data-close>Close</button></div>
+  <form id="kf" class="fields two"><label class="f" style="grid-column:1/-1">What<input type="text" name="title" required placeholder="e.g. Send proposal"></label>
+    <label class="f">Type<select name="type"><option value="todo">To-do</option><option value="call">Call</option><option value="linkedin">LinkedIn</option><option value="follow_up">Follow-up</option></select></label>
+    <label class="f">Due<input type="date" name="due" value="${new Date().toISOString().slice(0, 10)}"></label>
+    <label class="f" style="grid-column:1/-1">Contact<select name="contactId"><option value="">—</option>${cs.map(c => `<option value="${c.id}">${esc(name(c))}</option>`).join("")}</select></label>
+    <div class="row" style="grid-column:1/-1;justify-content:flex-end"><button class="btn primary" type="submit">Add task</button></div></form>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#kf").addEventListener("submit", async ev => { ev.preventDefault(); if (!needDb()) return; const f = new FormData(ev.target);
+    const due = f.get("due") ? new Date(f.get("due") + "T09:00").getTime() : Date.now();
+    await put("tasks", newId(), { title: String(f.get("title")).trim(), type: f.get("type"), due, contactId: f.get("contactId") || "", status: "open", createdAt: Date.now() }); closeModal(); toast("Task added."); });
+}
+function editOutbox(eid) {
+  const it = dueItems().find(i => i.e.id === eid); if (!it) return;
+  openModal(`<div class="modal-h"><h2>Edit this email</h2><button class="btn sm" data-close>Close</button></div>
+  <p class="small muted">Changes apply to ${esc(name(it.c))} for this send only. The template stays the same.</p>
+  <label class="f">Body<textarea id="ob-body" style="min-height:220px;font-family:var(--body)">${esc(it.m.main)}</textarea></label>
+  <div class="row" style="justify-content:flex-end"><button class="btn primary" id="ob-save">Use this text</button></div>`);
+  $("#modal-root [data-close]").onclick = closeModal;
+  $("#ob-save").onclick = () => { S.overrides[eid] = $("#ob-body").value; closeModal(); render(); };
+}
+async function personalize(eid) {
+  const it = dueItems().find(i => i.e.id === eid); if (!it || !sample) return;
+  S.busy = "Claude is personalizing the email to " + name(it.c) + "…"; render();
+  try {
+    const c = it.c, facts = { name: name(c), title: c.title, company: c.company, ...(c.custom || {}) };
+    const r = await sample(`Rewrite this cold email so the opening line is specific to the recipient, using only the facts given. Keep everything else almost the same, keep it under 120 words, plain text, no signature, no subject line, no made-up facts.\n\nRecipient facts (JSON): ${JSON.stringify(facts)}\n\nEmail body:\n${it.m.main}\n\nReturn only the new email body.`, { modelTier: "quick" });
+    if (r && r.text) S.overrides[eid] = r.text.trim();
+  } catch (e) { toast(e && e.code === "rate_limited" ? "Claude is busy — try again in a minute." : "Claude couldn't personalize that just now.", "bad"); }
+  finally { S.busy = ""; render(); }
+}
+
+// ------------------------------------------------------------------ events
+document.addEventListener("click", async ev => {
+  if (ev.target.closest("#modal-root")) return;
+  const el = ev.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  if (a === "sel" || a === "sel-all" || a === "mode" || a === "seq-stoponreply") return; // handled on change
+  if (el.tagName === "TR" && ev.target.closest("input,button,a,select")) return;
+  ev.preventDefault && el.tagName !== "INPUT" && ev.preventDefault();
+  const seq = S.seqId && S.data.sequences[S.seqId];
+  switch (a) {
+    case "contact": return showContact(id);
+    case "new-contact": return contactForm(null);
+    case "import": return importForm();
+    case "inbox": return checkInbox();
+    case "run": return runOutbox();
+    case "skip": S.skip.has(id) ? S.skip.delete(id) : S.skip.add(id); return render();
+    case "edit-out": return editOutbox(id);
+    case "personalize": return personalize(id);
+    case "unpersonalize": delete S.overrides[id]; return render();
+    case "new-task": return taskForm();
+    case "task-done": case "task-skip": { if (!needDb()) return; const t = S.data.tasks[id]; const o = $("#out-" + id); await completeTask(t, a === "task-done" ? "done" : "skipped", o ? o.value : ""); return toast(a === "task-done" ? "Task done." : "Task skipped."); }
+    case "task-snooze": if (!needDb()) return; await patch("tasks", id, { due: startOfDay() + DAY + 9 * 36e5 }); return toast("Moved to tomorrow.");
+    case "bulk-clear": S.sel.clear(); return render();
+    case "bulk-enroll": { if (!needDb()) return; const sid = $("#bulk-seq").value; if (!sid) return toast("Choose a sequence first."); const r = await enroll(sid, [...S.sel]); if (r) { toast(`Enrolled ${r.added}. Skipped ${r.skipped} already enrolled or not contactable.`); S.sel.clear(); render(); } return; }
+    case "bulk-tag": { if (!needDb()) return; const tag = tagsOf($("#bulk-tag").value); if (!tag.length) return toast("Type a tag first."); await inBatches([...S.sel], cid => patch("contacts", cid, { tags: tagsOf([...(S.data.contacts[cid].tags || []), ...tag].join(",")) })); toast("Tagged."); return render(); }
+    case "bulk-delete": { if (!needDb()) return; if (!(await confirmBox(`Delete ${S.sel.size} contacts and their history?`, "Delete"))) return; const ids = [...S.sel];
+      await inBatches(list("enrollments").filter(e => ids.includes(e.contactId)), e => remove("enrollments", e.id));
+      await inBatches(list("tasks").filter(t => ids.includes(t.contactId)), t => remove("tasks", t.id));
+      await inBatches(ids, cid => remove("contacts", cid)); S.sel.clear(); toast("Deleted."); return render(); }
+    case "new-seq": return seqForm(null);
+    case "open-seq": S.seqId = id; return render();
+    case "back-seqs": S.seqId = null; return render();
+    case "seq-edit": return seqForm(seq);
+    case "seq-status": { if (!needDb()) return; const v = el.dataset.v;
+      if (v === "active" && !(seq.steps || []).length) return toast("Add at least one step first.", "bad");
+      if (v === "archived" && !(await confirmBox("Archive this sequence? Its people stop receiving steps.", "Archive"))) return;
+      await patch("sequences", seq.id, { status: v }); if (v === "archived") S.seqId = null; toast("Sequence " + (v === "active" ? "activated" : v) + "."); return render(); }
+    case "seq-clone": { if (!needDb()) return; const nid = newId(); await put("sequences", nid, { name: seq.name + " (copy)", description: seq.description || "", steps: seq.steps || [], stopOnReply: seq.stopOnReply !== false, status: "draft", createdAt: Date.now() }); S.seqId = nid; return render(); }
+    case "step-add": return stepForm(seq, null);
+    case "step-edit": return stepForm(seq, +el.dataset.i);
+    case "step-up": case "step-down": { if (!needDb()) return; const i = +el.dataset.i, j = a === "step-up" ? i - 1 : i + 1, steps = [...seq.steps]; [steps[i], steps[j]] = [steps[j], steps[i]];
+      for (const e of list("enrollments").filter(e => e.seqId === seq.id && ["active", "paused"].includes(e.status))) { if (e.step === i) await patch("enrollments", e.id, { step: j }); else if (e.step === j) await patch("enrollments", e.id, { step: i }); }
+      return patch("sequences", seq.id, { steps }); }
+    case "step-del": { if (!needDb()) return; if (!(await confirmBox("Delete this step?", "Delete"))) return; const i = +el.dataset.i, steps = seq.steps.filter((_, k) => k !== i);
+      for (const e of list("enrollments").filter(e => e.seqId === seq.id && ["active", "paused"].includes(e.status) && e.step > i)) await patch("enrollments", e.id, { step: e.step - 1 });
+      return patch("sequences", seq.id, { steps }); }
+    case "enroll-tag": { if (!needDb()) return; const tag = $("#enroll-tag").value; if (!tag) return toast("Choose a tag."); const r = await enroll(seq.id, list("contacts").filter(c => (c.tags || []).includes(tag)).map(c => c.id)); if (r) toast(`Enrolled ${r.added}. Skipped ${r.skipped}.`); return render(); }
+    case "enr": if (!needDb()) return; await patch("enrollments", id, { status: el.dataset.v, ...(el.dataset.v === "active" ? { nextRun: S.data.enrollments[id].nextRun ?? Date.now() } : {}) }); return;
+    case "tpl-new": return templateForm(null);
+    case "tpl-edit": return templateForm(id);
+    case "deal-new": return dealForm(null);
+    case "deal-edit": return dealForm(id);
+    case "clear-examples": { if (!needDb()) return; if (!(await confirmBox("Remove all contacts tagged “example”, plus their deals, tasks and sequence enrollments?", "Remove"))) return;
+      const ids = list("contacts").filter(c => (c.tags || []).includes("example")).map(c => c.id);
+      await inBatches(list("deals").filter(d => ids.includes(d.contactId)), d => remove("deals", d.id));
+      await inBatches(list("enrollments").filter(e => ids.includes(e.contactId)), e => remove("enrollments", e.id));
+      await inBatches(list("tasks").filter(t => ids.includes(t.contactId)), t => remove("tasks", t.id));
+      await inBatches(list("emails").filter(m => ids.includes(m.contactId)), m => remove("emails", m.id));
+      await inBatches(ids, cid => remove("contacts", cid)); toast("Example data removed."); return render(); }
+  }
+});
+document.addEventListener("change", async ev => {
+  const t = ev.target;
+  if (t.id === "f-status") { S.f.status = t.value; return render(); }
+  if (t.id === "f-tag") { S.f.tag = t.value; return render(); }
+  if (t.dataset.act === "sel") { t.checked ? S.sel.add(t.dataset.id) : S.sel.delete(t.dataset.id); return render(); }
+  if (t.dataset.act === "sel-all") { filteredContacts().slice(0, 400).forEach(c => t.checked ? S.sel.add(c.id) : S.sel.delete(c.id)); return render(); }
+  if (t.dataset.act === "mode") { if (!needDb()) { t.checked = !t.checked; return; } S.settings.mode = t.checked ? "send" : "draft"; await db.doc("settings/main").set(strip(S.settings)).catch(e => toast(dbErr(e), "bad")); return render(); }
+  if (t.dataset.act === "seq-stoponreply") { if (!needDb()) return; await patch("sequences", S.seqId, { stopOnReply: t.checked }); }
+});
+document.addEventListener("input", ev => { if (ev.target.id === "f-q") { S.f.q = ev.target.value; render(); } });
+document.addEventListener("submit", async ev => {
+  if (ev.target.id !== "setup-form") return; ev.preventDefault(); if (!needDb()) return;
+  const v = k => $("#s-" + k).value;
+  const stages = v("stages").split(",").map(s => lc(s)).filter(Boolean);
+  const next = { ...S.settings, senderName: v("senderName").trim(), company: v("company").trim(), address: v("address").trim(), signature: v("signature"),
+    dailyLimit: Math.max(0, parseInt(v("dailyLimit"), 10) || 0), mode: $("#s-mode").checked ? "send" : "draft", stages: stages.length ? stages : DEFAULTS.stages };
+  try { await db.doc("settings/main").set(next); S.settings = next; document.activeElement && document.activeElement.blur(); toast("Setup saved."); render(); } catch (e) { toast(dbErr(e), "bad"); }
+});
+// kanban drag & drop
+let dragId = null;
+document.addEventListener("dragstart", ev => { const d = ev.target.closest && ev.target.closest("[data-deal]"); if (d) { dragId = d.dataset.deal; ev.dataTransfer.effectAllowed = "move"; try { ev.dataTransfer.setData("text/plain", dragId); } catch (_) {} } });
+document.addEventListener("dragover", ev => { const col = ev.target.closest && ev.target.closest(".col[data-stage]"); if (col && dragId) { ev.preventDefault(); document.querySelectorAll(".col.over").forEach(c => c !== col && c.classList.remove("over")); col.classList.add("over"); } });
+document.addEventListener("dragend", () => { dragId = null; document.querySelectorAll(".col.over").forEach(c => c.classList.remove("over")); });
+document.addEventListener("drop", async ev => {
+  const col = ev.target.closest && ev.target.closest(".col[data-stage]"); if (!col || !dragId) return; ev.preventDefault();
+  const d = S.data.deals[dragId], stage = col.dataset.stage; dragId = null; col.classList.remove("over");
+  if (!d || d.stage === stage || !needDb()) return;
+  await saveDeal(d.id, { ...strip(d), stage, probability: PROB[stage] ?? d.probability ?? 30 }); render();
+});
+
+// ------------------------------------------------------------------ routing + boot
+function route() { const h = (location.hash || "").slice(1); if (VIEWS.some(([k]) => k === h)) { if (S.view !== h) S.seqId = null; S.view = h; } render(); window.scrollTo(0, 0); }
+window.addEventListener("hashchange", route);
+
+async function boot() {
+  route();
+  const C = window.claude;
+  if (!C || !C.use) { S.dbState = "none"; S.gmail = "none"; return render(); }
+  const slow = setTimeout(() => { if (S.dbState === "loading") { S.dbState = "slow"; render(); } }, 10000);
+  C.use("mcp").then(m => { mcp = m; S.gmail = m ? "ok" : "none"; schedule(); });
+  C.use("sample").then(s => { sample = s; S.sampleOK = !!s; schedule(); });
+  C.use("user").then(async u => { user = u; if (u && u.can) { try { const w = await u.can("data.write"); if (w === false) S.canWrite = false; } catch (_) {} schedule(); } });
+  db = await C.use("db");
+  if (!db) { clearTimeout(slow); S.dbState = "none"; return render(); }
+  const fail = e => { clearTimeout(slow); S.dbState = "error"; S.dbErr = e && e.code; schedule(); };
+  for (const col of COLS) db.collection(col).onSnapshot(snap => {
+    const o = {}; for (const d of snap.docs) o[d.id] = { id: d.id, ...d.data() };
+    S.data[col] = o; S.loaded.add(col);
+    if (S.loaded.size === COLS.length + 1 && S.dbState !== "ready") { S.dbState = "ready"; clearTimeout(slow); }
+    schedule();
+  }, fail);
+  db.doc("settings/main").onSnapshot(snap => {
+    S.settings = { ...DEFAULTS, ...(snap.exists ? snap.data() : {}) }; S.loaded.add("settings");
+    if (S.loaded.size === COLS.length + 1 && S.dbState !== "ready") { S.dbState = "ready"; clearTimeout(slow); }
+    schedule();
+  }, fail);
+}
+boot();
+})();
+</script>
