@@ -312,7 +312,7 @@ function compose(c, step, e, bodyOverride) {
 }
 
 // ------------------------------------------------------------------ engine
-function activeSeq(e) { const s = S.data.sequences[e.seqId]; return s && s.status === "active" ? s : null; }
+function activeSeq(e) { const s = S.data.sequences[e.seqId]; return s && s.status === "active" && s.managedBy !== "claude" ? s : null; }
 function dueItems(now = Date.now()) {
   const items = [];
   for (const e of list("enrollments")) {
@@ -776,6 +776,7 @@ function vSequence(s) {
     <div class="row">${s.status === "active" ? `<button class="btn" data-act="seq-status" data-v="paused">Pause</button>` : `<button class="btn primary" data-act="seq-status" data-v="active">Activate</button>`}
       <button class="btn" data-act="seq-edit">Rename</button><button class="btn" data-act="seq-clone">Duplicate</button><button class="btn danger" data-act="seq-status" data-v="archived">Archive</button></div></div>
   <div class="stack">
+  ${s.managedBy === "claude" ? `<div class="banner"><b>Claude runs this sequence for you.</b> Emails go out from your Gmail every weekday and follow-ups stop for anyone who replies. It never appears in your Outbox, so nothing is sent twice.</div>` : ""}
   ${s.status !== "active" ? `<div class="banner warn">This sequence is ${esc(s.status)}. Nothing goes out until you activate it. You can enroll people now and they'll start once it's active.</div>` : ""}
   <div class="grid g4"><div class="card tile"><div class="label">Enrolled</div><div class="value">${st.total}</div><div class="sub">${st.active} active</div></div>
     <div class="card tile"><div class="label">Emails</div><div class="value">${st.emails}</div></div>
