@@ -179,14 +179,15 @@ td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
 (() => {
 "use strict";
 const DAY = 864e5;
-const COLS = ["contacts", "templates", "sequences", "enrollments", "tasks", "deals", "emails"];
+const COLS = ["contacts", "templates", "sequences", "enrollments", "tasks", "deals", "emails", "texts"];
+const SMS_SVC = "Infobip Message";
 const STATUSES = ["new", "contacted", "engaged", "replied", "meeting", "qualified", "customer", "lost", "unsubscribed", "bounced"];
 const TERMINAL = ["unsubscribed", "bounced"];
 const STEP_TYPES = { email: "Email", sms: "Text message", linkedin: "LinkedIn", call: "Phone call", task: "Manual task" };
 const SMS_STOP = " Reply STOP to opt out.";
 const PROB = { lead: 10, qualified: 20, meeting: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
 const DEFAULTS = { senderName: "", company: "", address: "", signature: "Best,\n{{sender_name}}\n{{sender_company}}",
-  dailyLimit: 30, mode: "draft", stages: ["lead", "qualified", "meeting", "proposal", "negotiation", "won", "lost"] };
+  dailyLimit: 30, mode: "draft", smsMode: "send", smsCountry: "", smsSender: "", stages: ["lead", "qualified", "meeting", "proposal", "negotiation", "won", "lost"] };
 const VIEWS = [["dashboard", "Dashboard"], ["outbox", "Outbox"], ["tasks", "Tasks"], ["contacts", "Contacts"],
   ["sequences", "Sequences"], ["templates", "Templates"], ["pipeline", "Pipeline"], ["setup", "Setup"]];
 
@@ -194,7 +195,7 @@ let db = null, mcp = null, sample = null, user = null;
 const S = {
   data: Object.fromEntries(COLS.map(c => [c, {}])), settings: { ...DEFAULTS }, loaded: new Set(),
   dbState: "loading", view: "dashboard", seqId: null, f: { q: "", status: "", tag: "" }, sel: new Set(),
-  gmail: "checking", sampleOK: false, skip: new Set(), overrides: {}, busy: "", dirty: false, canWrite: true,
+  gmail: "checking", sms: "checking", sampleOK: false, skip: new Set(), overrides: {}, busy: "", dirty: false, canWrite: true,
 };
 
 // ------------------------------------------------------------------ helpers
@@ -217,7 +218,24 @@ const name = c => c ? ([c.first_name, c.last_name].filter(Boolean).join(" ") || 
 const pill = (s, cls) => `<span class="pill ${esc(cls || s)}">${esc(s)}</span>`;
 const smsInfo = t => { const uni = /[^\x00-\x7F€£¥èéùìòÇØøÅåÄÖÑÜßÉäöñüà]/.test(t), per = uni ? 70 : 160, multi = uni ? 67 : 153;
   return { n: t.length, parts: t.length <= per ? 1 : Math.ceil(t.length / multi) }; };
-const canText = c => !!(c && c.smsOk && String(c.phone || "").replace(/\D/g, "").length >= 7);
+function intlNumber(phone) {
+  const raw = String(phone || "").trim(), plus = raw.startsWith("+"); let d = raw.replace(/\D/g, "");
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (!plus && S.settings.smsCountry && d.length <= 9) d = String(S.settings.smsCountry).replace(/\D/g, "") + d.replace(/^0/, "");
+  return d;
+}
+const canText = c => !!(c && c.smsOk && intlNumber(c.phone).length >= 8);
+const autoSms = () => S.settings.smsMode !== "copy" && S.sms === "ok";
+const firstMsg = p => (p && Array.isArray(p.messages) && p.messages[0]) || (p && Array.isArray(p.results) && p.results[0]) || p || {};
+const smsIdOf = p => { const m = firstMsg(p); return String(m.messageId || m.id || (p && p.bulkId) || ""); };
+const smsStatusOf = p => { const st = firstMsg(p).status || {}; return String(st.groupName || st.name || "").toUpperCase(); };
+async function sendSms(c, text) {
+  if (!mcp) throw { code: "server_not_connected", server: SMS_SVC };
+  const input = { channel: "SMS", to: intlNumber(c.phone), text };
+  if (S.settings.smsSender) input.sender = S.settings.smsSender;
+  const r = await mcp.callTool(SMS_SVC, "send", input);
+  return r.payload || {};
+}
 function composeSms(c, step) { const r = fill(step.body || "", ctxFor(c), c.id + "sms"); const text = r.out.trim() + SMS_STOP;
   return { text, missing: r.missing, problem: r.missing.length ? "Missing " + r.missing.join(", ") : !r.out.trim() ? "No message" : "" }; }
 async function copyText(t, what) { try { await navigator.clipboard.writeText(t); toast((what || "Text") + " copied."); } catch (_) { toast("Couldn't copy automatically. Select the text and copy it.", "bad"); } }
@@ -377,15 +395,16 @@ async function completeTask(t, status, outcome) {
 
 // ------------------------------------------------------------------ Gmail
 function gmailMsg(e) {
-  const code = e && e.code;
-  return ({ server_not_connected: "Gmail isn't connected. Add it in claude.ai Settings → Connectors, then try again.",
-    needs_reauth: "Gmail needs to be reconnected in claude.ai Settings → Connectors.",
-    not_in_manifest: "Gmail isn't allowed for this page. Use the page's Permissions menu to allow it.",
-    approval_required: "Gmail needs your approval. Click the button again and choose Allow.",
-    blocked_by_policy: "Your organization blocks this Gmail action.",
-    selection_required: "You have more than one Gmail connector — pick one when Claude asks.",
-    server_unavailable: "Gmail didn't answer. Check Gmail before retrying so nothing goes out twice.",
-    tool_error: "Gmail refused it: " + ((e && e.message) || "unknown error") })[code] || ("Gmail error: " + ((e && e.message) || code || "unknown"));
+  const code = e && e.code, svc = e && e.server === SMS_SVC ? "Infobip" : "Gmail";
+  const check = svc === "Infobip" ? "Check your Infobip message logs" : "Check Gmail";
+  return ({ server_not_connected: `${svc} isn't connected. Add it in claude.ai Settings → Connectors, then try again.`,
+    needs_reauth: `${svc} needs to be reconnected in claude.ai Settings → Connectors.`,
+    not_in_manifest: `${svc} isn't allowed for this page. Use the page's Permissions menu to allow it.`,
+    approval_required: `${svc} needs your approval. Click the button again and choose Allow.`,
+    blocked_by_policy: `Your organization blocks this ${svc} action.`,
+    selection_required: `You have more than one ${svc} connector — pick one when Claude asks.`,
+    server_unavailable: `${svc} didn't answer. ${check} before retrying so nothing goes out twice.`,
+    tool_error: `${svc} refused it: ` + ((e && e.message) || "unknown error") })[code] || (`${svc} error: ` + ((e && e.message) || code || "unknown"));
 }
 async function gmail(tool, input) { if (!mcp) throw { code: "server_not_connected" }; const r = await mcp.callTool("Gmail", tool, input); return r.payload || {}; }
 
@@ -405,6 +424,15 @@ async function runOutbox() {
       if (it.kind === "sms") {
         if (!it.ok) { await patch("enrollments", it.e.id, nextFor(it.e, it.seq, now)); await logC(it.c.id, "sms", "Text step skipped: " + (it.c.smsOk ? "no valid phone number" : "hasn't agreed to texts")); continue; }
         if (it.m.problem) { st.held++; continue; }
+        if (autoSms()) {
+          let res;
+          try { res = await sendSms(it.c, it.m.text); } catch (e) { throw { ...e, server: SMS_SVC }; }
+          await put("texts", newId(), { contactId: it.c.id, enrollId: it.e.id, seqId: it.seq.id, step: it.e.step, to: intlNumber(it.c.phone), body: it.m.text,
+            at: Date.now(), messageId: smsIdOf(res), status: smsStatusOf(res) || "SENT" });
+          await patch("enrollments", it.e.id, nextFor(it.e, it.seq, Date.now()));
+          await logC(it.c.id, "sms", "Texted: " + it.m.text.slice(0, 120), { lastContacted: Date.now(), ...(it.c.status === "new" ? { status: "contacted" } : {}) });
+          st.texts = (st.texts || 0) + 1; continue;
+        }
         await put("tasks", newId(), { contactId: it.c.id, enrollId: it.e.id, step: it.e.step, type: "sms", title: "Text " + name(it.c),
           notes: it.m.text, phone: it.c.phone, status: "open", due: now, createdAt: now });
         await patch("enrollments", it.e.id, { nextRun: null });
@@ -431,7 +459,7 @@ async function runOutbox() {
       delete S.overrides[it.e.id];
       st.emails++; remaining--;
     }
-    toast(`Done: ${st.emails} email${st.emails === 1 ? "" : "s"} ${mode === "send" ? "sent" : "drafted in Gmail"}, ${st.tasks} task${st.tasks === 1 ? "" : "s"} created` + (st.held ? `, ${st.held} held back` : "") + ".");
+    toast(`Done: ${st.emails} email${st.emails === 1 ? "" : "s"} ${mode === "send" ? "sent" : "drafted in Gmail"}, ${st.texts || 0} text${st.texts === 1 ? "" : "s"} sent, ${st.tasks} task${st.tasks === 1 ? "" : "s"} created` + (st.held ? `, ${st.held} held back` : "") + ".");
   } catch (e) {
     toast(e && e.code ? gmailMsg(e) : dbErr(e), "bad");
   } finally { S.busy = ""; render(); }
@@ -441,7 +469,7 @@ const AUTO_RE = /out of (the )?office|automatic reply|auto[- ]?reply|autoreply|a
 const OPTOUT_RE = /\bunsubscribe\b|remove me|opt[- ]?out|stop emailing|take me off/i;
 async function checkInbox() {
   if (!needDb() || S.busy) return;
-  const watch = list("contacts").filter(c => c.lastContacted && !TERMINAL.includes(c.status) && EMAIL_RE.test(c.email || ""));
+  const watch = S.gmail === "ok" ? list("contacts").filter(c => c.lastContacted && !TERMINAL.includes(c.status) && EMAIL_RE.test(c.email || "")) : [];
   const byEmail = Object.fromEntries(watch.map(c => [lc(c.email), c]));
   let replies = 0, outs = 0, bounces = 0;
   try {
@@ -465,6 +493,11 @@ async function checkInbox() {
         const text = lc(decode((m.subject || "") + " " + (m.snippet || "")));
         for (const c of watch) { const cur = S.data.contacts[c.id]; if (cur && !TERMINAL.includes(cur.status) && text.includes(lc(c.email))) { await optOut(c.id, "bounced"); bounces++; } }
       }
+    }
+    for (const t of list("texts").filter(t => t.messageId && !["DELIVERED", "UNDELIVERABLE", "REJECTED", "EXPIRED"].includes(t.status) && t.at > Date.now() - 3 * DAY)) {
+      try { const r = await mcp.callTool(SMS_SVC, "check_status", { messageId: t.messageId }, { cache: false }); const stt = smsStatusOf(r.payload);
+        if (stt && stt !== t.status) { await patch("texts", t.id, { status: stt }); if (["UNDELIVERABLE", "REJECTED", "EXPIRED"].includes(stt)) await logC(t.contactId, "sms", "Text not delivered (" + stt.toLowerCase() + ")"); }
+      } catch (_) { break; }
     }
     S.settings.lastInboxCheck = Date.now();
     await db.doc("settings/main").set(S.settings).catch(() => {});
@@ -568,10 +601,11 @@ function renderRail() {
   const tasksDue = list("tasks").filter(t => t.status === "open" && t.due <= Date.now()).length;
   const outbox = S.dbState === "ready" ? dueItems().length : 0;
   const g = S.gmail === "ok" ? ["ok", "Gmail available"] : S.gmail === "checking" ? ["warn", "Checking Gmail…"] : ["bad", "Gmail not available here"];
+  const sm = S.sms === "ok" ? (S.settings.smsMode === "copy" ? ["warn", "Texts: copy and send yourself"] : ["ok", "Texts: Infobip"]) : S.sms === "checking" ? ["warn", "Checking Infobip…"] : ["bad", "Infobip not available here"];
   $("#rail").innerHTML = `<div class="brand"><i></i>Outreach</div>` + VIEWS.map(([k, label]) => {
     const n = k === "tasks" ? tasksDue : k === "outbox" ? outbox : 0;
     return `<a href="#${k}" class="${S.view === k ? "on" : ""}">${label}${n ? `<span class="count">${n}</span>` : ""}</a>`;
-  }).join("") + `<div class="foot"><span><span class="dot ${g[0]}"></span>${g[1]}</span><span>Mode: <b>${S.settings.mode === "send" ? "send from Gmail" : "Gmail drafts"}</b></span></div>`;
+  }).join("") + `<div class="foot"><span><span class="dot ${g[0]}"></span>${g[1]}</span><span><span class="dot ${sm[0]}"></span>${sm[1]}</span><span>Mode: <b>${S.settings.mode === "send" ? "send from Gmail" : "Gmail drafts"}</b></span></div>`;
 }
 function statusBanner() {
   let b = "";
@@ -600,13 +634,13 @@ function vDashboard() {
   return loadingOr(`
   <div class="head"><div><h1>Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}${S.settings.senderName ? ", " + esc(S.settings.senderName.split(" ")[0]) : ""}</h1>
     <p>${emailsDue ? `${emailsDue} email${emailsDue === 1 ? " is" : "s are"} ready in the Outbox` : "No emails are due right now"} and ${tasksDue} task${tasksDue === 1 ? " is" : "s are"} due.</p></div>
-    <div class="row"><button class="btn" data-act="inbox" ${S.gmail !== "ok" ? "disabled" : ""}>Check Gmail for replies</button><a class="btn primary" href="#outbox">Open Outbox</a></div></div>
+    <div class="row"><button class="btn" data-act="inbox" ${S.gmail !== "ok" && S.sms !== "ok" ? "disabled" : ""}>Check replies and deliveries</button><a class="btn primary" href="#outbox">Open Outbox</a></div></div>
   <div class="stack">
   ${setupNeeded ? `<div class="banner warn"><b>Before you email anyone:</b> add your name, company and mailing address in <a href="#setup">Setup</a>. They go in every email's signature and footer.</div>` : ""}
   ${examples ? `<div class="banner">The contacts tagged <span class="tag">example</span> are sample data so you can try things out. <button class="btn sm" data-act="clear-examples">Remove example data</button></div>` : ""}
   <div class="grid g4">
     <div class="card tile"><div class="label">Contacts</div><div class="value">${cs.length}</div><div class="sub">${list("enrollments").filter(e => e.status === "active").length} in active sequences</div></div>
-    <div class="card tile"><div class="label">Emails · 30 days</div><div class="value">${em.length}</div><div class="sub">${em.filter(m => m.mode === "send").length} sent · ${em.filter(m => m.mode !== "send").length} drafted</div></div>
+    <div class="card tile"><div class="label">Emails · 30 days</div><div class="value">${em.length}</div><div class="sub">${em.filter(m => m.mode === "send").length} sent · ${em.filter(m => m.mode !== "send").length} drafted · ${list("texts").filter(t => t.at >= m30).length} texts</div></div>
     <div class="card tile"><div class="label">Reply rate</div><div class="value">${emailed.size ? Math.round(100 * replied / emailed.size) : 0}%</div><div class="sub">${replied} of ${emailed.size} people emailed</div></div>
     <div class="card tile"><div class="label">Open pipeline</div><div class="value">${money(open.reduce((a, d) => a + (+d.value || 0), 0))}</div><div class="sub">${money(weighted)} weighted · ${open.length} deals</div></div>
   </div>
@@ -639,9 +673,9 @@ function vOutbox() {
     <div class="row"><label class="check"><input type="checkbox" id="mode-toggle" data-act="mode" ${send ? "checked" : ""}> Send right away (instead of drafts)</label></div></div>
   <div class="stack">
   ${S.gmail !== "ok" ? `<div class="banner bad">Gmail isn't available on this page right now, so emails can't go out. Connect Gmail in claude.ai Settings → Connectors and open this page inside Claude.</div>` : ""}
-  <div class="card row"><div><b>${ready.length}</b> email${ready.length === 1 ? "" : "s"} ready · <b>${tasks.length + texts.filter(i => i.ok && !i.m.problem).length}</b> task${tasks.length + texts.length === 1 ? "" : "s"} to create (calls, LinkedIn, texts) · <span class="muted">${left} of today's ${+S.settings.dailyLimit || 0} email limit left</span></div>
+  <div class="card row"><div><b>${ready.length}</b> email${ready.length === 1 ? "" : "s"} ready · ${autoSms() ? `<b>${texts.filter(i => i.ok && !i.m.problem).length}</b> text${texts.length === 1 ? "" : "s"} to send · <b>${tasks.length}</b> call/LinkedIn task${tasks.length === 1 ? "" : "s"}` : `<b>${tasks.length + texts.filter(i => i.ok && !i.m.problem).length}</b> task${tasks.length + texts.length === 1 ? "" : "s"} to create (calls, LinkedIn, texts)`} · <span class="muted">${left} of today's ${+S.settings.dailyLimit || 0} email limit left</span></div>
     <span class="spacer"></span>
-    <button class="btn primary" data-act="run" ${(!items.length || S.busy || (ready.length && S.gmail !== "ok" && !tasks.length && !texts.length)) ? "disabled" : ""}>${send ? `Send ${Math.min(ready.length, left)} email${Math.min(ready.length, left) === 1 ? "" : "s"}` : `Create ${Math.min(ready.length, left)} Gmail draft${Math.min(ready.length, left) === 1 ? "" : "s"}`}${tasks.length + texts.length ? ` + ${tasks.length + texts.length} task${tasks.length + texts.length === 1 ? "" : "s"}` : ""}</button></div>
+    <button class="btn primary" data-act="run" ${(!items.length || S.busy || (ready.length && S.gmail !== "ok" && !tasks.length && !texts.length)) ? "disabled" : ""}>${send ? `Send ${Math.min(ready.length, left)} email${Math.min(ready.length, left) === 1 ? "" : "s"}` : `Create ${Math.min(ready.length, left)} Gmail draft${Math.min(ready.length, left) === 1 ? "" : "s"}`}${autoSms() && texts.length ? ` + ${texts.length} text${texts.length === 1 ? "" : "s"}` : ""}${(autoSms() ? tasks.length : tasks.length + texts.length) ? ` + ${autoSms() ? tasks.length : tasks.length + texts.length} task${(autoSms() ? tasks.length : tasks.length + texts.length) === 1 ? "" : "s"}` : ""}</button></div>
   ${emails.length ? emails.map(i => {
     const skipped = S.skip.has(i.e.id);
     return `<div class="card"><div class="row" style="align-items:flex-start">
@@ -653,7 +687,7 @@ function vOutbox() {
         <button class="btn sm" data-act="skip" data-id="${i.e.id}">${skipped ? "Include" : "Skip this run"}</button></div></div>
       <div class="preview" style="margin-top:10px;${skipped ? "opacity:.45" : ""}"><div class="subj">${esc(i.m.subject || "(no subject)")}</div>${esc(i.m.body)}</div></div>`;
   }).join("") : texts.length ? "" : `<div class="card empty">No emails are due. ${list("sequences").some(s => s.status === "active") ? "Enroll more contacts or wait for the next steps." : `Activate a sequence and enroll contacts to fill the Outbox. <a href="#sequences">Go to Sequences</a>`}</div>`}
-  ${texts.length ? `<div class="card"><h2>Text messages</h2><p class="small muted">Each one becomes a task with the message ready to copy, so you can send it from your phone.</p>
+  ${texts.length ? `<div class="card"><h2>Text messages</h2><p class="small muted">${autoSms() ? "These are <b>sent through Infobip</b> when you click the button above." : "Each one becomes a task with the message ready to copy, so you can send it from your phone." + (S.settings.smsMode !== "copy" ? " Infobip isn't available on this page right now." : "")}</p>
     <div class="stack" style="gap:10px">${texts.map(i => { const inf = smsInfo(i.m.text); return `<div><button class="linkish" data-act="contact" data-id="${i.c.id}"><b>${esc(name(i.c))}</b></button> <span class="small muted mono">${esc(i.c.phone || "no phone")}</span>
       ${!i.ok ? " " + pill(i.c.smsOk ? "will skip: no valid phone" : "will skip: hasn't agreed to texts", "warn") : i.m.problem ? " " + pill("held: " + i.m.problem, "warn") : ` <span class="small muted">${inf.n} characters · ${inf.parts} SMS</span>`}
       <div class="preview" style="margin-top:6px">${esc(i.m.text)}</div></div>`; }).join("")}</div></div>` : ""}
@@ -802,14 +836,19 @@ function vSetup() {
       <label class="f">Emails per day (all sequences together)<input type="number" min="0" max="500" id="s-dailyLimit" value="${esc(st.dailyLimit)}"></label>
       <label class="check"><input type="checkbox" id="s-mode" ${st.mode === "send" ? "checked" : ""}> Send right away from Gmail (otherwise emails become Gmail drafts)</label>
       <label class="f">Pipeline stages, in order (keep “won” and “lost”)<input type="text" id="s-stages" value="${esc((st.stages || DEFAULTS.stages).join(", "))}"></label>
-      <p class="small muted">New Gmail accounts: start around 20 a day and raise it slowly. Keep cold email short, plain and personal.</p></div></div>
+      <p class="small muted">New Gmail accounts: start around 20 a day and raise it slowly. Keep cold email short, plain and personal.</p></div>
+    <div class="card fields"><h2>Texts</h2>
+      <label class="check"><input type="checkbox" id="s-smsMode" ${st.smsMode !== "copy" ? "checked" : ""}> Send texts automatically through Infobip (otherwise you copy them and send from your phone)</label>
+      <label class="f">Country code for numbers saved without one<input type="text" id="s-smsCountry" value="${esc(st.smsCountry || "")}" placeholder="e.g. 371 for Latvia"></label>
+      <label class="f">Sender name shown on the text (optional, up to 11 letters)<input type="text" id="s-smsSender" maxlength="11" value="${esc(st.smsSender || "")}" placeholder="Leave empty to use Infobip's default"></label>
+      <p class="small muted">Infobip trial accounts only deliver to your own verified number. Add funds in Infobip to text your contacts.</p></div></div>
     <div class="row"><span class="spacer"></span><button class="btn primary" type="submit">Save setup</button></div>
   </form>
   <div class="card" style="margin-top:16px"><h2>How this works</h2><ul class="small">
     <li>Your data is saved with this page. Only you, and people you give edit access, can see it.</li>
     <li>Emails go out through your own Gmail, so replies land in your inbox. Use <b>Check Gmail for replies</b> on the Dashboard to stop sequences for people who answered.</li>
     <li>Nothing runs in the background: open the Outbox and run it once a day.</li>
-    <li>Text-message steps become tasks with the message ready to copy, and only go to people you've marked as agreeing to texts.</li>
+    <li>Text messages go out through Infobip when you run the Outbox, and only to people you've marked as agreeing to texts. Turn automatic texts off above to copy and send them yourself instead.</li>
     <li>Opens and clicks aren't tracked here. Replies are the number that matters.</li></ul></div>`);
 }
 
@@ -832,6 +871,7 @@ function showContact(id) {
     ${deals.length ? `<div><h3>Deals</h3>${deals.map(d => `<div class="small">${esc(d.name)} · ${money(d.value)} ${pill(d.stage)}</div>`).join("")}</div>` : ""}
     ${Object.keys(c.custom || {}).length ? `<div><h3>Custom fields</h3>${Object.entries(c.custom).map(([k, v]) => `<div class="small"><span class="muted mono">{{${esc(k)}}}</span> ${esc(v)}</div>`).join("")}</div>` : ""}
   </div><div class="stack"><div><h3>Timeline</h3><ul class="timeline">${(c.log || []).map(l => `<li class="${esc(l.k)}"><span class="small muted">${ago(l.t)}</span><div class="small">${esc(l.d)}</div></li>`).join("") || `<li class="small muted">Nothing yet.</li>`}</ul></div>
+    ${list("texts").some(t => t.contactId === id) ? `<div><h3>Texts</h3>${list("texts").filter(t => t.contactId === id).sort((a, b) => b.at - a.at).map(t => `<div class="small" style="margin-bottom:6px">${pill((t.status || "sent").toLowerCase(), ["UNDELIVERABLE", "REJECTED", "EXPIRED"].includes(t.status) ? "bad" : t.status === "DELIVERED" ? "done" : "open")} <span class="muted">${ago(t.at)}</span><div class="preview">${esc(t.body)}</div></div>`).join("")}</div>` : ""}
     ${ems.length ? `<div><h3>Emails</h3>${ems.map(m => `<details><summary class="small">${pill(m.mode === "send" ? "sent" : "draft")} ${esc(m.subject)} <span class="muted">· ${ago(m.at)}</span></summary><div class="preview small">${esc(m.body)}</div>${m.url ? `<a class="small" href="${esc(m.url)}" target="_blank" rel="noopener">Open in Gmail</a>` : ""}</details>`).join("")}</div>` : ""}
   </div></div>`, { wide: true });
   const root = $("#modal-root .modal");
@@ -861,12 +901,20 @@ function textForm(id) {
   openModal(`<div class="modal-h"><div><h2>Text ${esc(name(c))}</h2><div class="small mono">${esc(c.phone)}</div></div><button class="btn sm" data-close>Close</button></div>
   <label class="f">Message<textarea id="tx-body" style="min-height:110px;font-family:var(--body)">Hi ${esc(c.first_name || "there")}, ${S.settings.senderName ? "it's " + esc(S.settings.senderName) + (S.settings.company ? " from " + esc(S.settings.company) : "") + ". " : ""}</textarea></label>
   <div class="small muted" id="tx-count"></div>
-  <div class="row"><button class="btn primary" id="tx-copy">Copy message</button><button class="btn" id="tx-phone">Copy number</button><span class="spacer"></span><button class="btn" id="tx-log">I sent it — log it</button></div>
-  <p class="small muted">Send it from your phone. “Reply STOP to opt out.” is added when you copy.</p>`);
+  <div class="row">${S.sms === "ok" ? `<button class="btn primary" id="tx-send">Send through Infobip</button>` : ""}<button class="btn ${S.sms === "ok" ? "" : "primary"}" id="tx-copy">Copy message</button><button class="btn" id="tx-phone">Copy number</button><span class="spacer"></span><button class="btn" id="tx-log">I sent it from my phone — log it</button></div>
+  <p class="small muted">“Reply STOP to opt out.” is added automatically. Sending to <span class="mono">+${esc(intlNumber(c.phone))}</span>.</p>`);
   const full = () => $("#tx-body").value.trim() + SMS_STOP;
   const cnt = () => { const i = smsInfo(full()); $("#tx-count").textContent = `${i.n} characters · ${i.parts} SMS`; };
   cnt(); $("#tx-body").oninput = cnt; $("#modal-root [data-close]").onclick = closeModal;
   $("#tx-copy").onclick = () => copyText(full(), "Message");
+  if ($("#tx-send")) $("#tx-send").onclick = async () => {
+    if (!needDb()) return; const btn = $("#tx-send"); btn.disabled = true; btn.textContent = "Sending…";
+    try { const res = await sendSms(c, full());
+      await put("texts", newId(), { contactId: id, to: intlNumber(c.phone), body: full(), at: Date.now(), messageId: smsIdOf(res), status: smsStatusOf(res) || "SENT" });
+      await logC(id, "sms", "Texted: " + full().slice(0, 120), { lastContacted: Date.now(), ...(c.status === "new" ? { status: "contacted" } : {}) });
+      toast("Text sent."); showContact(id);
+    } catch (e) { toast(gmailMsg({ ...e, server: SMS_SVC }), "bad"); btn.disabled = false; btn.textContent = "Send through Infobip"; }
+  };
   $("#tx-phone").onclick = () => copyText(c.phone, "Number");
   $("#tx-log").onclick = async () => { if (!needDb()) return; await logC(id, "sms", "Texted: " + full().slice(0, 120), { lastContacted: Date.now(), ...(c.status === "new" ? { status: "contacted" } : {}) }); toast("Logged."); showContact(id); };
 }
@@ -1131,7 +1179,8 @@ document.addEventListener("submit", async ev => {
   const v = k => $("#s-" + k).value;
   const stages = v("stages").split(",").map(s => lc(s)).filter(Boolean);
   const next = { ...S.settings, senderName: v("senderName").trim(), company: v("company").trim(), address: v("address").trim(), signature: v("signature"),
-    dailyLimit: Math.max(0, parseInt(v("dailyLimit"), 10) || 0), mode: $("#s-mode").checked ? "send" : "draft", stages: stages.length ? stages : DEFAULTS.stages };
+    dailyLimit: Math.max(0, parseInt(v("dailyLimit"), 10) || 0), mode: $("#s-mode").checked ? "send" : "draft",
+    smsMode: $("#s-smsMode").checked ? "send" : "copy", smsCountry: v("smsCountry").replace(/\D/g, ""), smsSender: v("smsSender").trim().slice(0, 11), stages: stages.length ? stages : DEFAULTS.stages };
   try { await db.doc("settings/main").set(next); S.settings = next; document.activeElement && document.activeElement.blur(); toast("Setup saved."); render(); } catch (e) { toast(dbErr(e), "bad"); }
 });
 // kanban drag & drop
@@ -1155,7 +1204,9 @@ async function boot() {
   const C = window.claude;
   if (!C || !C.use) { S.dbState = "none"; S.gmail = "none"; return render(); }
   const slow = setTimeout(() => { if (S.dbState === "loading") { S.dbState = "slow"; render(); } }, 10000);
-  C.use("mcp").then(m => { mcp = m; S.gmail = m ? "ok" : "none"; schedule(); });
+  C.use("mcp").then(async m => { mcp = m; S.gmail = m ? "ok" : "none"; S.sms = m ? "ok" : "none"; schedule();
+    if (m) { try { const l = await m.listTools(); const has = n => (l.servers || []).some(x => x.server === n && (x.tools || []).length);
+      S.gmail = has("Gmail") ? "ok" : "none"; S.sms = has(SMS_SVC) ? "ok" : "none"; } catch (_) {} schedule(); } });
   C.use("sample").then(s => { sample = s; S.sampleOK = !!s; schedule(); });
   C.use("user").then(async u => { user = u; if (u && u.can) { try { const w = await u.can("data.write"); if (w === false) S.canWrite = false; } catch (_) {} schedule(); } });
   db = await C.use("db");
